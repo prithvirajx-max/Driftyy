@@ -1,0 +1,1079 @@
+/* Base styling and variables */
+:root {
+  --primary-pink: #FF4E8E;
+  --primary-violet: #7B2FF6;
+  --glass-bg: rgba(255, 255, 255, 0.22);
+  --glass-border: rgba(255, 255, 255, 0.32);
+  --glass-hover: rgba(255, 255, 255, 0.3);
+  --text-light: #F8EAFE;
+  --text-dark: #2A0B4D;
+  --shadow-pink: rgba(255, 78, 142, 0.25);
+  --shadow-violet: rgba(123, 47, 246, 0.25);
+  --gradient-primary: linear-gradient(135deg, var(--primary-pink) 0%, var(--primary-violet) 100%);
+  --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  --button-glow: 0 0 15px rgba(255, 126, 179, 0.6);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Main App Container */
+.appContainer {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--gradient-primary);
+  color: white;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  padding-bottom: 80px; /* Space for navigation bar */
+}
+
+/* Blank Container for empty app */
+.blankContainer {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+}
+
+/* Header Styling */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #fff, #ffd6ef);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.profileButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.profileButton:hover {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #fff, #ffd6ef);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.profileIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  font-size: 1.2rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.profileIcon:hover {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+/* Split Layout - Main content area with split panels */
+.splitLayout {
+  display: flex;
+  flex-direction: row;
+  height: calc(100vh - 60px - 70px); /* Full height minus header and tab bar */
+  margin-top: 60px; /* Header height */
+  overflow: hidden;
+}
+
+/* Video Panel - Left side */
+.videoPanel {
+  width: 40%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.videoPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.videoPanelHeader h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.liveIndicator {
+  background-color: var(--primary-pink);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Content Panel - Right side */
+.contentPanel {
+  width: 60%;
+  height: 100%;
+  overflow-y: auto;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabHeader {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.tabHeader h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.tabContent {
+  padding: 1rem;
+  height: calc(100% - 58px); /* Minus tab header */
+  overflow-y: auto;
+}
+
+/* Content Styling */
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.welcomeCard {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--card-shadow);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.welcomeCard h2 {
+  font-size: 1.8rem;
+  margin: 0 0 1rem 0;
+  background: linear-gradient(90deg, #fff, #ffd6ef);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.welcomeCard p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  max-width: 300px;
+}
+
+.startMatchingButton {
+  padding: 1rem 2.5rem;
+  background: white;
+  color: var(--primary-pink);
+  border-radius: 50px;
+  border: none;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.startMatchingButton:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--button-glow);
+}
+
+.statsCard {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  justify-content: space-between;
+}
+
+.statItem {
+  text-align: center;
+  width: 33.33%;
+}
+
+.statValue {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Navigation Bar Styling */
+.navBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.5rem 1rem;
+  z-index: 100;
+}
+
+.navButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  position: relative;
+}
+
+.navButton span {
+  margin-top: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.navButton:hover {
+  color: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+.navButton.active {
+  color: white;
+}
+
+.navButton.active::after {
+  content: '';
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+}
+
+.tabButton svg {
+  font-size: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.tabButton span {
+  white-space: nowrap;
+}
+
+.tabButton.active {
+  color: white;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+}
+
+/* Video Chat Section */
+.videoContainer {
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.mockVideo {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.mockVideoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.selfVideo {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 100px;
+  height: 150px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.selfVideoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activeVideo {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.noVideo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 2rem;
+}
+
+.videoControls {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.2rem;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+
+.controlBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.2rem;
+  border-radius: 50px;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.controlBtn.active {
+  background: rgba(255, 120, 120, 0.4);
+}
+
+.controlBtn.endBtn {
+  background: rgba(255, 78, 142, 0.4);
+}
+
+.connecting {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(123, 47, 246, 0.2);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+
+.pulse {
+  color: white;
+  opacity: 0.7;
+}
+
+.connecting p {
+  margin-top: 1rem;
+  color: white;
+  font-weight: 500;
+}
+
+/* Explore Section */
+.exploreContainer {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 1rem;
+}
+
+.profileCard {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 2px solid transparent;
+  position: relative;
+  height: 70vh;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-y;
+  animation: borderGlow 3s infinite alternate;
+  box-shadow: 
+    0 10px 25px rgba(0, 0, 0, 0.2),
+    0 0 0 2px rgba(255, 255, 255, 0.1),
+    0 0 15px var(--shadow-pink);
+}
+
+@keyframes borderGlow {
+  0% {
+    border-color: var(--primary-pink);
+    box-shadow: 0 0 15px var(--shadow-pink), 0 0 30px rgba(255, 78, 142, 0.2);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), 0 0 15px rgba(255, 255, 255, 0.1);
+  }
+  100% {
+    border-color: var(--primary-violet);
+    box-shadow: 0 0 15px var(--shadow-violet), 0 0 30px rgba(123, 47, 246, 0.2);
+  }
+}
+
+.profileImage {
+  width: 100%;
+  height: 65%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.profileImage::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.5), transparent);
+}
+
+.profileInfo {
+  padding: 1.2rem;
+  color: white;
+}
+
+.profileInfo h2 {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.profileInfo p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.6rem;
+}
+
+.profileBio {
+  line-height: 1.4;
+}
+
+.profileActions {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  padding: 1rem;
+  margin-top: auto;
+}
+
+.actionBtn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.skipBtn {
+  background: rgba(255, 255, 255, 0.8);
+  color: #888;
+}
+
+.likeBtn {
+  background: linear-gradient(45deg, var(--primary-pink), var(--primary-violet));
+  color: white;
+  font-size: 1.6rem;
+}
+
+.messageBtn {
+  background: rgba(255, 255, 255, 0.8);
+  color: var(--primary-violet);
+}
+
+.exploreHelp {
+  margin-top: 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+/* Hangout Section */
+.hangoutContainer {
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 1.6rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.hangoutGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.hangoutCard {
+  padding: 1.5rem 1rem;
+  border-radius: 18px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 1.5px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.hangoutIcon {
+  font-size: 2rem;
+  margin-bottom: 0.8rem;
+  color: var(--primary-pink);
+  background: rgba(255, 255, 255, 0.2);
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.hangoutCard h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.hangoutCard p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+.hangoutBtn {
+  padding: 0.6rem 1rem;
+  border-radius: 50px;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nearbyActivities {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.nearbyActivities h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.activityAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.activityAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.activityInfo {
+  flex: 1;
+}
+
+.activityInfo h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+}
+
+.activityInfo p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.joinBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  border: none;
+  background: linear-gradient(90deg, var(--primary-pink), var(--primary-violet));
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Profile Section */
+.profileContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profileHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+}
+
+.userAvatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1rem;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.userAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.editProfileBtn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--primary-violet);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.userInfo h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.userInfo p {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.profileSection {
+  margin-bottom: 1.5rem;
+}
+
+.profileSection h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.8rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.glassCard {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  border: 1.5px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 1.2rem;
+  line-height: 1.5;
+}
+
+.interestTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.interestTag {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.preference {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.preference:last-child {
+  border-bottom: none;
+}
+
+.preference span:first-child {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.settingBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 0.7rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  text-align: left;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.settingBtn:last-child {
+  margin-bottom: 0;
+}
+
+.logoutBtn {
+  background: rgba(255, 78, 142, 0.15);
+  color: var(--primary-pink);
+  font-weight: 600;
+}
+
+/* Responsive Design - Mobile First */
+/* Media Queries */
+@media (max-width: 768px) {
+  .content {
+    padding: 1rem;
+  }
+  
+  .welcomeCard {
+    padding: 1.5rem;
+  }
+  
+  .welcomeCard h2 {
+    font-size: 1.5rem;
+  }
+  
+  .welcomeCard p {
+    font-size: 1rem;
+  }
+  
+  .startMatchingButton {
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+  }
+  
+  .statsCard {
+    padding: 1.25rem;
+  }
+  
+  .statValue {
+    font-size: 1.75rem;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .navButton {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .navButton span {
+    font-size: 0.7rem;
+  }
+  
+  .splitLayout {
+    flex-direction: column;
+    height: auto;
+    padding-bottom: 70px; /* Space for bottom nav */
+  }
+
+  .videoPanel {
+    width: 100%;
+    height: 40vh;
+    min-height: 300px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .contentPanel {
+    width: 100%;
+    height: auto;
+  }
+  
+  .profileCard {
+    height: 55vh;
+    max-height: 450px;
+  }
+  
+  .hangoutGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tabButton {
+    padding: 0.5rem 0.8rem;
+  }
+  
+  /* Smaller video controls on mobile */
+  .videoControls {
+    padding: 0.8rem;
+  }
+  
+  .controlBtn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .selfVideo {
+    width: 80px;
+    height: 120px;
+  }
+  
+  /* Better spacing on mobile */
+  .tabContent {
+    padding: 0.8rem;
+  }
+  
+  .tabHeader h2 {
+    font-size: 1.2rem;
+  }
+}
+
+/* Tablets and medium screens */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .splitLayout {
+    height: calc(100vh - 60px - 70px);
+  }
+  
+  .videoPanel {
+    width: 45%;
+  }
+  
+  .contentPanel {
+    width: 55%;
+  }
+  
+  .hangoutGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Larger desktop screens */
+@media (min-width: 1025px) {
+  .header {
+    padding: 1.2rem 2rem;
+  }
+  
+  .tabContent {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  
+  .hangoutGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .profileHeader {
+    flex-direction: row;
+    text-align: left;
+    gap: 2rem;
+  }
+  
+  .userInfo {
+    align-self: center;
+  }
+  
+  .videoPanel {
+    width: 40%;
+  }
+  
+  .contentPanel {
+    width: 60%;
+  }
+}
+
+/* Animations */
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 78, 142, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 78, 142, 0.8), 0 0 30px rgba(123, 47, 246, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(255, 78, 142, 0.5);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,310 @@
+.messageContainer {
+  display: flex;
+  margin: 8px 0;
+  max-width: 80%;
+}
+
+.own {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+
+.other {
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+.message {
+  padding: 12px 16px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Message from others has a darker gradient */
+.other .message {
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.5) 0%, rgba(123, 47, 246, 0.5) 100%);
+  border-top-left-radius: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Own messages have a lighter gradient */
+.own .message {
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.7) 0%, rgba(123, 47, 246, 0.7) 100%);
+  border-top-right-radius: 4px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.messageText {
+  font-size: 15px;
+  line-height: 1.4;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+/* Reply styling */
+.replyContainer {
+  display: flex;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.08);
+  gap: 8px;
+  max-width: 100%;
+}
+
+.own .replyContainer {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.replyIcon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+}
+
+.replyContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.replySender {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #32D9CB;
+  margin-bottom: 2px;
+}
+
+.replyText {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mediaContainer {
+  width: 100%;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  max-width: 250px;
+}
+
+.mediaImage, .mediaVideo {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.locationContainer {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+  width: 100%;
+  max-width: 250px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+  -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.locationContainer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.locationContainer:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.locationContainer:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(50, 217, 203, 0.6);
+}
+
+.locationContent {
+  width: 100%;
+  height: 100%;
+}
+
+.locationHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.locationIcon {
+  color: #32d9cb;
+}
+
+.locationName {
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.locationMap {
+  width: 100%;
+  height: 150px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.mapImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.locationContainer:hover .mapImage {
+  transform: scale(1.05);
+}
+
+.locationLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s ease;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.locationLink:hover {
+  transform: scale(1.02);
+}
+
+.locationLink:active {
+  transform: scale(0.98);
+}
+
+/* Add a subtle animation to draw attention to the fact that it's clickable */
+.locationLink::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background-size: 200% 200%;
+  animation: shine 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.openInMapsLabel {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+  backdrop-filter: blur(2px);
+  z-index: 2;
+}
+
+.locationContainer:hover .openInMapsLabel {
+  background: rgba(50, 217, 203, 0.8);
+  transform: scale(1.05);
+}
+
+/* New reply button styles */
+.messageReplyButton {
+  position: absolute;
+  /* Change position to be more visible */
+  top: 50%;
+  right: -55px; /* Position to the right of the message */
+  transform: translateY(-50%);
+  background-color: #32D9CB;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 10;
+  /* Make it more visually prominent */
+  animation: pulseReply 1.5s ease-in-out infinite;
+}
+
+.messageReplyButton:hover {
+  background-color: #28b5aa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.messageReplyButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* For better visual context when hovering */
+.messageContainer {
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+/* Visual indicator for hover */
+.messageContainer:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Add pulse animation for reply button */
+@keyframes pulseReply {
+  0% {
+    box-shadow: 0 0 0 0 rgba(50, 217, 203, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(50, 217, 203, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(50, 217, 203, 0);
+  }
+}

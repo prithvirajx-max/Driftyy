@@ -1,0 +1,383 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { doc, setDoc, getDoc, updateDoc, query, where, collection, getDocs } from 'firebase/firestore';
+import { auth, db } from '../config/firebase';
+
+interface AuthContextType {
+  currentUser: FirebaseUser | null;
+  userDetails: UserDetails | null;
+  signup: (email: string, phoneNumber: string) => Promise<void>;
+  login: (email: string, phoneNumber: string) => Promise<void>;
+  adminLogin: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  isLoading: boolean;
+  verifyOtp: (otp: string) => Promise<boolean>;
+  sendOtp: (email: string) => Promise<void>;
+}
+
+interface UserDetails {
+  uid: string;
+  email: string;
+  phoneNumber: string;
+  displayName?: string;
+  photoURL?: string;
+  isVerified: boolean;
+  isAdmin?: boolean;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [verificationCode, setVerificationCode] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+
+
+
+  // Generate and send OTP
+  const generateOTP = (): string => {
+    // Generate a 6-digit OTP
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  // Send OTP to user's email
+  const sendOtp = async (email: string): Promise<void> => {
+    const otp = generateOTP();
+    setVerificationCode(otp);
+    setPendingEmail(email);
+    
+    // In a real implementation, this would use a backend service to send an email
+    // For demo purposes, we're storing the OTP in state
+    try {
+      // Simulate sending email
+      console.log(`OTP sent to ${email}: ${otp}`);
+      
+      // For authenticated users, store OTP in their profile
+      if (currentUser) {
+        const userRef = doc(db, 'users', currentUser.uid);
+        await updateDoc(userRef, {
+          otp: otp,
+          otpTimestamp: Date.now()
+        });
+      } else {
+        // For login/signup, store in temporary collection
+        const tempOtpRef = doc(db, 'tempOtp', email);
+        await setDoc(tempOtpRef, {
+          otp: otp,
+          otpTimestamp: Date.now()
+        });
+      }
+      
+      // For demo purposes, we'll alert the OTP
+      alert(`Your OTP is: ${otp} (In a real app, this would be sent to your email)`);
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      throw new Error('Failed to send verification code');
+    }
+  };
+
+  // Verify OTP
+  const verifyOtp = async (otp: string): Promise<boolean> => {
+    try {
+      // Check if this is for a new signup/login or existing user
+      if (currentUser) {
+        // Existing user flow
+        const userRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(userRef);
+        
+        if (!docSnap.exists()) throw new Error('User data not found');
+        
+        const userData = docSnap.data();
+        const storedOTP = userData.otp;
+        const otpTimestamp = userData.otpTimestamp;
+        
+        // Check if OTP is expired (30 minutes validity)
+        const isExpired = Date.now() - otpTimestamp > 30 * 60 * 1000;
+        
+        if (isExpired) {
+          throw new Error('OTP expired');
+        }
+        
+        if (otp === storedOTP) {
+          // Mark user as verified
+          await updateDoc(userRef, {
+            isVerified: true
+          });
+          
+          // Update local user details
+          setUserDetails(prev => prev ? { ...prev, isVerified: true } : null);
+          
+          return true;
+        } else {
+          return false;
+        }
+      } else if (pendingEmail) {
+        // Login/signup flow - verify against temp collection
+        const tempOtpRef = doc(db, 'tempOtp', pendingEmail);
+        const docSnap = await getDoc(tempOtpRef);
+        
+        if (!docSnap.exists()) throw new Error('OTP data not found');
+        
+        const otpData = docSnap.data();
+        const storedOTP = otpData.otp;
+        const otpTimestamp = otpData.otpTimestamp;
+        
+        // Check if OTP is expired (30 minutes validity)
+        const isExpired = Date.now() - otpTimestamp > 30 * 60 * 1000;
+        
+        if (isExpired) {
+          throw new Error('OTP expired');
+        }
+        
+        return otp === storedOTP;
+      } else {
+        throw new Error('No pending verification');
+      }
+    } catch (error) {
+      console.error('Error verifying OTP:', error);
+      return false;
+    }
+  };
+
+  // Sign up with email and phone
+  const signup = async (email: string, phoneNumber: string) => {
+    setIsLoading(true);
+    try {
+      // Check if email is already registered
+      const emailQuery = query(collection(db, 'users'), where('email', '==', email));
+      const emailQuerySnapshot = await getDocs(emailQuery);
+      if (!emailQuerySnapshot.empty) {
+        throw new Error('Email already registered');
+      }
+      
+      // Check if phone number is already registered
+      const phoneQuery = query(collection(db, 'users'), where('phoneNumber', '==', phoneNumber));
+      const phoneQuerySnapshot = await getDocs(phoneQuery);
+      if (!phoneQuerySnapshot.empty) {
+        throw new Error('Phone number already registered');
+      }
+      
+      // We'll create a temporary password for authentication purposes
+      // This will only be used internally and never shown to the user
+      const tempPassword = Math.random().toString(36).slice(-8);
+      
+      // Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, tempPassword);
+      const user = userCredential.user;
+      
+      // Generate and send OTP
+      await sendOtp(email);
+      
+      // Store user details in Firestore
+      const userData = {
+        uid: user.uid,
+        email,
+        phoneNumber,
+        createdAt: Date.now(),
+        isVerified: false
+      };
+      
+      // Add to users collection
+      await setDoc(doc(db, 'users', user.uid), userData);
+      
+      // Set user details in state
+      setUserDetails({
+        uid: user.uid,
+        email,
+        phoneNumber,
+        isVerified: false
+      });
+      
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      throw new Error(error.message || 'Failed to create account');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Login with email and phone
+  const login = async (email: string, phoneNumber: string) => {
+    setIsLoading(true);
+    try {
+      // Find user by email
+      const emailQuery = query(collection(db, 'users'), where('email', '==', email));
+      const emailQuerySnapshot = await getDocs(emailQuery);
+      
+      if (emailQuerySnapshot.empty) {
+        throw new Error('Email not registered');
+      }
+      
+      // Get first matching user
+      const userDoc = emailQuerySnapshot.docs[0];
+      const userData = userDoc.data();
+      
+      // Verify phone number
+      if (userData.phoneNumber !== phoneNumber) {
+        throw new Error('Invalid phone number');
+      }
+      
+      // Send OTP for verification
+      await sendOtp(email);
+      
+      // Store email for verification later
+      setPendingEmail(email);
+      
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.message || 'Failed to login');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Logout
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setCurrentUser(null);
+      setUserDetails(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('adminAuthenticated');
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  };
+  
+  // Admin login
+  const adminLogin = async (username: string, password: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Simple credential validation for admin access
+      // In production, this would be done with proper authentication
+      if (username === 'prithvi_rajx' && password === 'driftyfounderprithviraj') {
+        // Create an admin user record
+        const adminUser = {
+          uid: 'admin-' + Date.now(),
+          username: username,
+          email: 'admin@drifty.com',
+          phoneNumber: '',
+          isVerified: true,
+          isAdmin: true
+        };
+        
+        // Store admin session in localStorage
+        localStorage.setItem('adminAuthenticated', 'true');
+        localStorage.setItem('adminLastLogin', new Date().toISOString());
+        localStorage.setItem('userDetails', JSON.stringify(adminUser));
+        
+        // Set the user details with admin flag
+        setUserDetails(adminUser);
+        
+        setIsLoading(false);
+        return true;
+      } else {
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Admin login error:', error);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // Listen for auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      
+      if (user) {
+        // Fetch user details from Firestore
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserDetails({
+              uid: user.uid,
+              email: userData.email,
+              phoneNumber: userData.phoneNumber,
+              displayName: userData.displayName || '',
+              photoURL: userData.photoURL || '',
+              isVerified: userData.isVerified || false,
+              isAdmin: userData.isAdmin || false
+            });
+            
+            // Store minimal user info in localStorage for persistence
+            localStorage.setItem('user', JSON.stringify({
+              uid: user.uid,
+              email: user.email
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
+      } else {
+        // Check if we have an admin user in localStorage
+        const adminAuthenticated = localStorage.getItem('adminAuthenticated') === 'true';
+        const userDetailsStr = localStorage.getItem('userDetails');
+        
+        if (adminAuthenticated && userDetailsStr) {
+          try {
+            const storedDetails = JSON.parse(userDetailsStr);
+            if (storedDetails && storedDetails.isAdmin) {
+              setUserDetails(storedDetails);
+            } else {
+              setUserDetails(null);
+              setPendingEmail(null);
+            }
+          } catch (error) {
+            console.error('Error parsing stored user details:', error);
+            setUserDetails(null);
+          }
+        } else {
+          setUserDetails(null);
+          localStorage.removeItem('user');
+        }
+      }
+      
+      setIsLoading(false);
+    });
+
+    // Check localStorage for persistence between page refreshes
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      // Just for state management between page refreshes
+      // Full auth is handled by Firebase's onAuthStateChanged
+      console.log('Found stored user info');
+    }
+
+    setIsLoading(false);
+  });
+
+  // Check localStorage for persistence between page refreshes
+  const storedUser = localStorage.getItem('user');
+  if (storedUser) {
+    // Just for state management between page refreshes
+    // Full auth is handled by Firebase's onAuthStateChanged
+    console.log('Found stored user info');
+  }
+
+  return () => unsubscribe();
+}, []);
+  );
+};
+
+export default AuthProvider;

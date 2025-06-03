@@ -1,0 +1,250 @@
+/* Same styles as ProfileCreation.module.css */
+.profileCreationContainer {
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.8) 0%, rgba(123, 47, 246, 0.8) 100%);
+  overflow-y: auto;
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+}
+
+.glassCard {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 700px;
+  margin-bottom: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glassCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.formTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: white;
+  text-align: center;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.formSubtitle {
+  font-size: 1.2rem;
+  color: white;
+  text-align: center;
+  margin-bottom: 3rem;
+  max-width: 600px;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 60%;
+  height: 3px;
+  background: linear-gradient(to right, #FF4E8E, transparent);
+  border-radius: 3px;
+}
+
+.editButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.editButton:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.profilePhotoDisplay {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+}
+
+.mainPhotoPreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  opacity: 0.7;
+}
+
+.additionalPhotosGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.additionalPhotoItem {
+  aspect-ratio: 3/4;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.additionalPhotoItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.formRow {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.formField {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldLabel {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.fieldValue {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  color: white;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+}
+
+.bioContainer {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 1rem;
+  color: white;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.optionTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.optionTab {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.optionTab:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.active {
+  background: rgba(255, 78, 142, 0.3);
+  border-color: rgba(255, 78, 142, 0.5);
+}
+
+.interestsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@media (max-width: 768px) {
+  .formRow {
+    flex-direction: column;
+  }
+  
+  .glassCard {
+    padding: 1.5rem;
+  }
+  
+  .formTitle {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .profileHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .profileName {
+    font-size: 2rem;
+  }
+  
+  .photosGrid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+}

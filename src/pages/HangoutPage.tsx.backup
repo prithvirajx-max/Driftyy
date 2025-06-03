@@ -1,0 +1,1014 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FaRegCommentDots, FaHeart, FaFilter, FaCheck, FaTimes, FaInfoCircle, FaBan } from 'react-icons/fa';
+import { IoMdSend, IoIosNotifications } from 'react-icons/io';
+import { FiMapPin, FiClock, FiRefreshCw } from 'react-icons/fi';
+import { BiMale, BiFemale } from 'react-icons/bi';
+import { RiChatSmile3Line } from 'react-icons/ri';
+import axios from 'axios';
+import { useNotifications } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
+import NotificationBell from '../components/notifications/NotificationBell';
+import styles from './HangoutPage.module.css';
+
+// Mock data for nearby users
+interface User {
+  id: string;
+  name: string;
+  age: number;
+  distance: number;
+  photo: string;
+  availabilityReason: string;
+  availabilityDuration: string;
+  religion?: string;
+  height?: string;
+  bio?: string;
+  gender: 'male' | 'female' | 'other';
+  lastActive?: string;
+}
+
+// Logo component
+const DriftyLogo: React.FC = () => (
+  <div className={styles.logoContainer}>
+    <span className={styles.driftyLogo}>Drifty</span>
+  </div>
+);
+
+// Mock data for users
+const mockNearbyUsers: User[] = [
+  {
+    id: '1',
+    name: 'Sophia',
+    age: 26,
+    distance: 3.2,
+    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+    availabilityReason: 'Looking for good conversation over coffee',
+    availabilityDuration: '2 hours',
+    religion: 'Spiritual',
+    height: '5\'7"',
+    bio: 'Passionate about art, hiking, and trying new restaurants. Looking for someone to share adventures with!',
+    gender: 'female'
+  },
+  {
+    id: '2',
+    name: 'Emma',
+    age: 24,
+    distance: 5.1,
+    photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2',
+    availabilityReason: 'Free for dinner tonight',
+    availabilityDuration: '3 hours',
+    religion: 'Christian',
+    height: '5\'6"',
+    bio: 'Music lover, foodie, and outdoor enthusiast. Coffee is my love language.',
+    gender: 'female'
+  },
+  {
+    id: '3',
+    name: 'Olivia',
+    age: 28,
+    distance: 8.3,
+    photo: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df',
+    availabilityReason: 'Looking for someone to join me for a movie',
+    availabilityDuration: '4 hours',
+    religion: 'Agnostic',
+    height: '5\'8"',
+    bio: 'Traveling whenever I can, reading in my free time, and always up for a good laugh.',
+    gender: 'female'
+  },
+  {
+    id: '4',
+    name: 'Isabella',
+    age: 25,
+    distance: 12.4,
+    photo: 'https://images.unsplash.com/photo-1519742866993-66d3cfef4bbd',
+    availabilityReason: 'Exploring the city today, could use some company',
+    availabilityDuration: 'Full day',
+    religion: 'Buddhist',
+    height: '5\'5"',
+    bio: 'Yoga instructor by day, foodie by night. Love dogs, beaches, and meaningful conversations.',
+    gender: 'female'
+  },
+  {
+    id: '5',
+    name: 'Mia',
+    age: 27,
+    distance: 15.7,
+    photo: 'https://images.unsplash.com/photo-1567532939604-b6b5b0db2604',
+    availabilityReason: 'Coffee break between meetings, would love to chat',
+    availabilityDuration: '1 hour',
+    religion: 'Hindu',
+    height: '5\'4"',
+    bio: 'Software developer with a passion for dance and photography. Always looking for new experiences.',
+    gender: 'female'
+  },
+  {
+    id: '6',
+    name: 'Ava',
+    age: 23,
+    distance: 18.9,
+    photo: 'https://images.unsplash.com/photo-1557555187-23d685287bc3',
+    availabilityReason: 'Have a free evening, looking for good company',
+    availabilityDuration: '3 hours',
+    religion: 'Jewish',
+    height: '5\'9"',
+    bio: 'Graduate student studying psychology. Love hiking, painting, and deep conversations under the stars.',
+    gender: 'female'
+  },
+  {
+    id: '7',
+    name: 'Charlotte',
+    age: 29,
+    distance: 22.3,
+    photo: 'https://images.unsplash.com/photo-1553267751-1c148a7280a1',
+    availabilityReason: 'Working remotely at a café, open to meeting someone new',
+    availabilityDuration: '2 hours',
+    religion: 'Catholic',
+    height: '5\'6"',
+    bio: 'Journalist with a love for travel, wine, and live music. Looking for someone to explore with.',
+    gender: 'female'
+  },
+  {
+    id: '8',
+    name: 'Amelia',
+    age: 24,
+    distance: 28.5,
+    photo: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2',
+    availabilityReason: 'Taking a break from studying, could use some company',
+    availabilityDuration: '1 hour',
+    religion: 'Muslim',
+    height: '5\'7"',
+    bio: 'Med student with a passion for cooking and photography. I believe in balance - work hard, play hard!',
+    gender: 'female'
+  },
+  {
+    id: '9',
+    name: 'James',
+    age: 28,
+    distance: 4.5,
+    photo: 'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea',
+    availabilityReason: 'Looking for someone to grab lunch with',
+    availabilityDuration: '1 hour',
+    religion: 'Agnostic',
+    height: '6\'0"',
+    bio: 'Tech entrepreneur who loves surfing and trail running. Always up for good food and interesting conversation.',
+    gender: 'male'
+  },
+  {
+    id: '10',
+    name: 'Michael',
+    age: 30,
+    distance: 8.7,
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+    availabilityReason: 'Coffee and bookstore browsing',
+    availabilityDuration: '3 hours',
+    religion: 'Christian',
+    height: '5\'11"',
+    bio: 'Software engineer, amateur photographer, and hiking enthusiast. Looking for someone to share adventures with.',
+    gender: 'male'
+  }
+];
+
+const HangoutPage: React.FC = () => {
+  const { token, user } = useAuth();
+  const { socket, notifications } = useNotifications();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // State for availability and filters
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [showReasonPopup, setShowReasonPopup] = useState(false);
+  const [availabilityReason, setAvailabilityReason] = useState('');
+  const [availabilityDuration, setAvailabilityDuration] = useState('1 hour');
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
+  const [distanceFilter, setDistanceFilter] = useState<5 | 10 | 30>(30);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // State for user interaction
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [requestMessage, setRequestMessage] = useState('');
+  const [showRequestSuccessPopup, setShowRequestSuccessPopup] = useState(false);
+  
+  // State for error handling
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  
+  // State for hangout requests
+  const [receivedRequests, setReceivedRequests] = useState<any[]>([]);
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
+  const [showRequestsTab, setShowRequestsTab] = useState<'received' | 'sent'>('received');
+  const [showRequestsList, setShowRequestsList] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  
+  // State for real-time updates
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Fetch hangout requests when component mounts
+  const fetchHangoutRequests = useCallback(async () => {
+    if (!token) return;
+    
+    try {
+      setLoadingRequests(true);
+      setNetworkError(null);
+      
+      const response = await axios.get('/api/hangouts/requests', {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { status: 'all', type: 'all' }
+      });
+      
+      if (response.data.success) {
+        // Split requests into received and sent
+        const received = response.data.data.filter(req => req.recipient._id === user?._id);
+        const sent = response.data.data.filter(req => req.sender._id === user?._id);
+        
+        setReceivedRequests(received);
+        setSentRequests(sent);
+      }
+    } catch (error) {
+      console.error('Error fetching hangout requests:', error);
+      setNetworkError('Failed to load hangout requests. Please try again.');
+    } finally {
+      setLoadingRequests(false);
+    }
+  }, [token, user?._id]);
+  
+  // Update availability status in the backend
+  const updateAvailabilityStatus = useCallback(async (status: boolean, reason: string, duration: string) => {
+    if (!token) return;
+    
+    try {
+      setNetworkError(null);
+      
+      const response = await axios.put('/api/hangouts/availability', {
+        isAvailable: status,
+        reason,
+        duration
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Successfully updated in backend
+        // Update socket status if socket is available
+        if (socket) {
+          socket.emit('update_availability', {
+            isAvailable: status,
+            reason,
+            duration
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating availability status:', error);
+      setNetworkError('Failed to update your availability status. Please try again.');
+      // Revert the UI state if there was an error
+      setIsAvailable(!status);
+    }
+  }, [token, socket]);
+  
+  // Handle real-time socket events
+  useEffect(() => {
+    if (!socket) return;
+    
+    // Listen for hangout request updates
+    socket.on('hangout_request_update', (data) => {
+      // Refresh requests when an update is received
+      fetchHangoutRequests();
+    });
+    
+    // Listen for user availability updates
+    socket.on('user_availability_update', (data) => {
+      // Update the filteredUsers list if the user is in it
+      setFilteredUsers(prev => 
+        prev.map(user => {
+          if (user.id === data.userId) {
+            return {
+              ...user,
+              availabilityReason: data.reason,
+              availabilityDuration: data.duration
+            };
+          }
+          return user;
+        })
+      );
+    });
+    
+    return () => {
+      // Clean up socket listeners
+      socket.off('hangout_request_update');
+      socket.off('user_availability_update');
+    };
+  }, [socket, fetchHangoutRequests]);
+  
+  // Initialize and set up the page
+  useEffect(() => {
+    // Apply the app's theme styling
+    document.body.style.overflow = 'auto';
+    document.body.style.background = 'linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%)';
+    
+    // Fetch hangout requests on component mount
+    fetchHangoutRequests();
+    
+    // Check for request ID in URL params for direct navigation to a specific request
+    const params = new URLSearchParams(location.search);
+    const requestId = params.get('requestId');
+    if (requestId) {
+      // Show the requests list and find the specific request
+      setShowRequestsList(true);
+      setShowRequestsTab('received');
+    }
+    
+    // Filter users based on criteria
+    filterUsers();
+    
+    return () => {
+      // Clean up styles when component unmounts
+      document.body.style.overflow = '';
+      document.body.style.background = '';
+    };
+  }, [location.search, fetchHangoutRequests]);
+  
+  // Filter users whenever criteria changes
+  useEffect(() => {
+    filterUsers();
+  }, [isAvailable, genderFilter, distanceFilter]);
+  
+  // Filter users based on selected criteria
+  const filterUsers = () => {
+    if (!isAvailable) {
+      setFilteredUsers([]);
+      return;
+    }
+    
+    const filtered = mockNearbyUsers.filter(user => {
+      // Filter by distance
+      if (user.distance > distanceFilter) return false;
+      
+      // Filter by gender
+      if (genderFilter !== 'all' && user.gender !== genderFilter) return false;
+      
+      return true;
+    });
+    
+    setFilteredUsers(filtered);
+  };
+
+  const handleAvailabilityToggle = () => {
+    if (!isAvailable) {
+      // Show popup to enter reason when enabling availability
+      setShowReasonPopup(true);
+    } else {
+      // Disable availability immediately and update server
+      setIsAvailable(false);
+      setAvailabilityReason('');
+      setAvailabilityDuration('1 hour');
+      
+      // Update availability status in backend
+      updateAvailabilityStatus(false, '', '');
+    }
+  };
+
+  const handleReasonSubmit = () => {
+    if (availabilityReason.trim()) {
+      // Set local state first for immediate UI feedback
+      setIsAvailable(true);
+      setShowReasonPopup(false);
+      
+      // Update availability status in backend
+      updateAvailabilityStatus(true, availabilityReason, availabilityDuration);
+      
+      // Update filtered users
+      filterUsers();
+    }
+  };
+  
+  // Refresh available users and requests
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    // Fetch latest hangout requests
+    fetchHangoutRequests();
+    // Re-filter users to get latest availability
+    filterUsers();
+    
+    // Show refresh animation for 1 second
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  };
+  
+  // Handle accepting a hangout request
+  const handleAcceptRequest = async (requestId: string) => {
+    if (!token) return;
+    
+    try {
+      setNetworkError(null);
+      
+      const response = await axios.put(`/api/hangouts/requests/${requestId}`, {
+        status: 'accepted'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Update local state
+        setReceivedRequests(prev => 
+          prev.map(req => {
+            if (req._id === requestId) {
+              return { ...req, status: 'accepted' };
+            }
+            return req;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      setNetworkError('Failed to accept request. Please try again.');
+    }
+  };
+  
+  // Handle rejecting a hangout request
+  const handleRejectRequest = async (requestId: string) => {
+    if (!token) return;
+    
+    try {
+      setNetworkError(null);
+      
+      const response = await axios.put(`/api/hangouts/requests/${requestId}`, {
+        status: 'rejected'
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Update local state
+        setReceivedRequests(prev => 
+          prev.map(req => {
+            if (req._id === requestId) {
+              return { ...req, status: 'rejected' };
+            }
+            return req;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      setNetworkError('Failed to reject request. Please try again.');
+    }
+  };
+
+  const openUserProfile = (user: User) => {
+    setSelectedUser(user);
+    setRequestMessage('');
+  };
+
+  const closeUserProfile = () => {
+    setSelectedUser(null);
+  };
+
+  const sendHangoutRequest = async () => {
+    if (!token || !selectedUser) return;
+    
+    try {
+      setNetworkError(null);
+      
+      const response = await axios.post('/api/hangouts/requests', {
+        recipientId: selectedUser.id,
+        message: requestMessage,
+        // Additional data like location could be added here
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        // Show success popup
+        setShowRequestSuccessPopup(true);
+        
+        // Add to local sent requests list
+        setSentRequests(prev => [response.data.data, ...prev]);
+        
+        // Automatically close after 3 seconds
+        setTimeout(() => {
+          setShowRequestSuccessPopup(false);
+          setSelectedUser(null);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error sending hangout request:', error);
+      setNetworkError('Failed to send hangout request. Please try again.');
+    }
+  };
+
+  const goToChat = () => {
+    // Navigate to chat with the selected user
+    if (selectedUser) {
+      navigate(`/chat/${selectedUser.id}`);
+    }
+  };
+
+  return (
+    <div className={styles.hangoutContainer}>
+      {/* Logo and top bar */}
+      <div className={styles.topBar}>
+        <DriftyLogo />
+        
+        {/* Notification Bell */}
+        <div className={styles.topBarActions}>
+          <button 
+            className={styles.refreshButton} 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <FiRefreshCw className={isRefreshing ? styles.refreshSpin : ''} />
+          </button>
+          <div className={styles.notificationBellWrapper}>
+            <NotificationBell />
+          </div>
+        </div>
+      </div>
+      
+      {/* Error Messages */}
+      {networkError && (
+        <div className={styles.errorBanner}>
+          <FaInfoCircle /> {networkError}
+          <button onClick={() => setNetworkError(null)} className={styles.dismissError}>
+            <FaTimes />
+          </button>
+        </div>
+      )}
+      
+      {locationError && (
+        <div className={styles.errorBanner}>
+          <FaInfoCircle /> {locationError}
+          <button onClick={() => setLocationError(null)} className={styles.dismissError}>
+            <FaTimes />
+          </button>
+        </div>
+      </div>
+      
+      {/* Hangout Requests Section */}
+      <div className={`${styles.requestsContainer} ${showRequestsList ? styles.showRequests : ''}`}>
+        <div className={styles.requestsHeader}>
+          <h2>Hangout Requests</h2>
+          <button className={styles.closeRequestsBtn} onClick={() => setShowRequestsList(false)}>
+            <FaTimes />
+          </button>
+        </div>
+        
+        <div className={styles.requestsTabs}>
+          <button
+            className={`${styles.requestsTab} ${showRequestsTab === 'received' ? styles.activeTab : ''}`}
+            onClick={() => setShowRequestsTab('received')}
+          >
+            Received {receivedRequests.length > 0 && <span className={styles.requestCount}>{receivedRequests.length}</span>}
+          </button>
+          <button
+            className={`${styles.requestsTab} ${showRequestsTab === 'sent' ? styles.activeTab : ''}`}
+            onClick={() => setShowRequestsTab('sent')}
+          >
+            Sent {sentRequests.length > 0 && <span className={styles.requestCount}>{sentRequests.length}</span>}
+          </button>
+        </div>
+        
+        <div className={styles.requestsList}>
+          {loadingRequests ? (
+            <div className={styles.loadingIndicator}>
+              <FiRefreshCw className={styles.refreshSpin} />
+              <p>Loading requests...</p>
+            </div>
+          ) : showRequestsTab === 'received' ? (
+            receivedRequests.length > 0 ? (
+              receivedRequests.map((request) => (
+                <div key={request._id} className={`${styles.requestItem} ${request.status !== 'pending' ? styles[request.status] : ''}`}>
+                  <div className={styles.requestSenderInfo}>
+                    <img src={request.sender.photo || '/default-avatar.png'} alt={request.sender.name} />
+                    <div>
+                      <h3>{request.sender.name}</h3>
+                      <p className={styles.requestMessage}>{request.message || 'Would like to hang out with you!'}</p>
+                      <p className={styles.requestTime}>{new Date(request.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  {request.status === 'pending' ? (
+                    <div className={styles.requestActions}>
+                      <button 
+                        className={styles.acceptButton}
+                        onClick={() => handleAcceptRequest(request._id)}
+                      >
+                        <FaCheck /> Accept
+                      </button>
+                      <button 
+                        className={styles.rejectButton}
+                        onClick={() => handleRejectRequest(request._id)}
+                      >
+                        <FaTimes /> Decline
+                      </button>
+                    </div>
+                  ) : (
+                    <div className={styles.requestStatus}>
+                      {request.status === 'accepted' ? (
+                        <>
+                          <span className={styles.acceptedStatus}>
+                            <FaCheck /> Accepted
+                          </span>
+                          <button 
+                            className={styles.chatButton}
+                            onClick={() => navigate(`/chat/${request.sender._id}`)}
+                          >
+                            <FaRegCommentDots /> Chat
+                          </button>
+                        </>
+                      ) : (
+                        <span className={styles.rejectedStatus}>
+                          <FaBan /> Declined
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className={styles.emptyState}>
+                <IoIosNotifications size={48} />
+                <p>No hangout requests received</p>
+              </div>
+            )
+          ) : (
+            sentRequests.length > 0 ? (
+              sentRequests.map((request) => (
+                <div key={request._id} className={`${styles.requestItem} ${request.status !== 'pending' ? styles[request.status] : ''}`}>
+                  <div className={styles.requestSenderInfo}>
+                    <img src={request.recipient.photo || '/default-avatar.png'} alt={request.recipient.name} />
+                    <div>
+                      <h3>{request.recipient.name}</h3>
+                      <p className={styles.requestMessage}>{request.message || 'Would like to hang out with you!'}</p>
+                      <p className={styles.requestTime}>{new Date(request.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.requestStatus}>
+                    {request.status === 'pending' ? (
+                      <span className={styles.pendingStatus}>
+                        Pending response
+                      </span>
+                    ) : request.status === 'accepted' ? (
+                      <>
+                        <span className={styles.acceptedStatus}>
+                          <FaCheck /> Accepted
+                        </span>
+                        <button 
+                          className={styles.chatButton}
+                          onClick={() => navigate(`/chat/${request.recipient._id}`)}
+                        >
+                          <FaRegCommentDots /> Chat
+                        </button>
+                      </>
+                    ) : (
+                      <span className={styles.rejectedStatus}>
+                        <FaBan /> Declined
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className={styles.emptyState}>
+                <IoIosNotifications size={48} />
+                <p>You haven't sent any hangout requests</p>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+      
+      {/* Floating requests notification button */}
+      {!showRequestsList && receivedRequests.filter(req => req.status === 'pending').length > 0 && (
+        <button className={styles.requestsFloatingButton} onClick={() => setShowRequestsList(true)}>
+          <IoIosNotifications />
+          <span>{receivedRequests.filter(req => req.status === 'pending').length}</span>
+        </button>
+      )}
+      
+      {/* Hangout Availability Toggle */}
+      <div className={styles.toggleContainer}>
+        <h2 className={styles.toggleTitle}>Start a Hangout</h2>
+{{ ... }}
+        <div className={styles.toggleWrapper}>
+          <div className={styles.toggleLabel}>{isAvailable ? "I'm Available" : "I'm Not Available"}</div>
+          <label className={styles.toggleSwitch}>
+            <input 
+              type="checkbox" 
+              checked={isAvailable} 
+              onChange={handleAvailabilityToggle}
+              disabled={showReasonPopup}
+            />
+            <span className={styles.toggleSlider}></span>
+          </label>
+        </div>
+        
+        {isAvailable && (
+          <div className={styles.availabilityDetails}>
+            <div className={styles.availabilityReason}>
+              <p className={styles.reasonLabel}>Why are you hanging out? <RiChatSmile3Line /></p>
+              <p className={styles.reasonValue}>{availabilityReason}</p>
+            </div>
+            <div className={styles.availabilityDuration}>
+              <p className={styles.durationLabel}>Available for <FiClock /></p>
+              <p className={styles.durationValue}>{availabilityDuration}</p>
+            </div>
+          </div>
+        )}
+        
+        {isAvailable && (
+          <div className={styles.filterSection}>
+            <button 
+              className={styles.filterButton}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <FaFilter /> Filters
+            </button>
+            
+            {showFilters && (
+              <div className={styles.filtersContainer}>
+                <div className={styles.filterGroup}>
+                  <h3>Gender</h3>
+                  <div className={styles.filterOptions}>
+                    <button 
+                      className={`${styles.filterOption} ${genderFilter === 'all' ? styles.active : ''}`}
+                      onClick={() => setGenderFilter('all')}
+                    >
+                      All
+                    </button>
+                    <button 
+                      className={`${styles.filterOption} ${genderFilter === 'male' ? styles.active : ''}`}
+                      onClick={() => setGenderFilter('male')}
+                    >
+                      <BiMale /> Male
+                    </button>
+                    <button 
+                      className={`${styles.filterOption} ${genderFilter === 'female' ? styles.active : ''}`}
+                      onClick={() => setGenderFilter('female')}
+                    >
+                      <BiFemale /> Female
+                    </button>
+                  </div>
+                </div>
+                
+                <div className={styles.filterGroup}>
+                  <h3>Distance</h3>
+                  <div className={styles.filterOptions}>
+                    <button 
+                      className={`${styles.filterOption} ${distanceFilter === 5 ? styles.active : ''}`}
+                      onClick={() => setDistanceFilter(5)}
+                    >
+                      5 km
+                    </button>
+                    <button 
+                      className={`${styles.filterOption} ${distanceFilter === 10 ? styles.active : ''}`}
+                      onClick={() => setDistanceFilter(10)}
+                    >
+                      10 km
+                    </button>
+                    <button 
+                      className={`${styles.filterOption} ${distanceFilter === 30 ? styles.active : ''}`}
+                      onClick={() => setDistanceFilter(30)}
+                    >
+                      30 km
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Availability Reason Popup */}
+      {showReasonPopup && (
+        <div className={styles.popupOverlay}>
+          <div className={styles.popup}>
+            <h3>Why are you available?</h3>
+            <p>Let others know what you're looking for</p>
+            <textarea
+              className={styles.reasonInput}
+              value={availabilityReason}
+              onChange={(e) => setAvailabilityReason(e.target.value)}
+              placeholder="I'm free for coffee and conversation..."
+              maxLength={100}
+            />
+            
+            <div className={styles.durationSelector}>
+              <h4><FiClock /> How long will you be available?</h4>
+              <div className={styles.durationOptions}>
+                <button 
+                  className={`${styles.durationOption} ${availabilityDuration === '1 hour' ? styles.active : ''}`}
+                  onClick={() => setAvailabilityDuration('1 hour')}
+                >
+                  1 hour
+                </button>
+                <button 
+                  className={`${styles.durationOption} ${availabilityDuration === '2 hours' ? styles.active : ''}`}
+                  onClick={() => setAvailabilityDuration('2 hours')}
+                >
+                  2 hours
+                </button>
+                <button 
+                  className={`${styles.durationOption} ${availabilityDuration === '3 hours' ? styles.active : ''}`}
+                  onClick={() => setAvailabilityDuration('3 hours')}
+                >
+                  3 hours
+                </button>
+                <button 
+                  className={`${styles.durationOption} ${availabilityDuration === 'Full day' ? styles.active : ''}`}
+                  onClick={() => setAvailabilityDuration('Full day')}
+                >
+                  Full day
+                </button>
+              </div>
+            </div>
+            
+            <div className={styles.popupActions}>
+              <button
+                className={styles.cancelButton}
+                onClick={() => setShowReasonPopup(false)}
+                aria-label="Cancel"
+              >
+                Cancel
+              </button>
+              <button
+                className={styles.submitButton}
+                onClick={handleReasonSubmit}
+                disabled={!availabilityReason.trim()}
+              >
+                Start Hangout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Nearby Users Feed */}
+      {isAvailable && (
+        <div className={styles.nearbyUsersContainer}>
+          <h2 className={styles.sectionTitle}>
+            People Available Nearby
+          </h2>
+          
+          {filteredUsers.length > 0 ? (
+            <div className={styles.usersGrid}>
+              {filteredUsers.map(user => (
+                <div 
+                  key={user.id} 
+                  className={styles.userCard}
+                  onClick={() => openUserProfile(user)}
+                >
+                  <div 
+                    className={styles.userPhoto} 
+                    style={{ backgroundImage: `url(${user.photo})` }}
+                  >
+                    <div className={styles.userGender}>
+                      {user.gender === 'male' ? <BiMale size={16} /> : <BiFemale size={16} />}
+                    </div>
+                  </div>
+                  <div className={styles.userInfo}>
+                    <h3>{user.name}, {user.age}</h3>
+                    <div className={styles.distanceInfo}>
+                      <FiMapPin size={14} />
+                      <span>{user.distance} km away</span>
+                    </div>
+                    <div className={styles.durationInfo}>
+                      <FiClock size={14} />
+                      <span>{user.availabilityDuration}</span>
+                    </div>
+                    <p className={styles.availabilityReason}>
+                      {user.availabilityReason}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.noUsersMessage}>
+              <p>No one available nearby matching your filters.</p>
+              <p>Try expanding your search distance or changing filters.</p>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Expanded User Profile Popup */}
+      {selectedUser && (
+        <div className={styles.popupOverlay}>
+          <div className={styles.expandedUserCard}>
+            <button
+              className={styles.closeButton}
+              onClick={closeUserProfile}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <div
+              className={styles.expandedUserPhoto}
+              style={{ backgroundImage: `url(${selectedUser.photo})` }}
+            >
+              <div className={styles.userGenderLarge}>
+                {selectedUser.gender === 'male' ? <BiMale size={24} /> : <BiFemale size={24} />}
+              </div>
+            </div>
+            <div className={styles.expandedUserInfo}>
+              <h2>{selectedUser.name}, {selectedUser.age}</h2>
+              <div className={styles.userDetailRow}>
+                <div className={styles.userDetail}>
+                  <span className={styles.detailLabel}>Distance:</span>
+                  <span>{selectedUser.distance} km</span>
+                </div>
+                <div className={styles.userDetail}>
+                  <span className={styles.detailLabel}>Available for:</span>
+                  <span>{selectedUser.availabilityDuration}</span>
+                </div>
+              </div>
+              <div className={styles.userDetailRow}>
+                <div className={styles.userDetail}>
+                  <span className={styles.detailLabel}>Religion:</span>
+                  <span>{selectedUser.religion || 'Not specified'}</span>
+                </div>
+                <div className={styles.userDetail}>
+                  <span className={styles.detailLabel}>Height:</span>
+                  <span>{selectedUser.height || 'Not specified'}</span>
+                </div>
+              </div>
+              <div className={styles.bioSection}>
+                <h3>Bio</h3>
+                <p>{selectedUser.bio || 'No bio available'}</p>
+              </div>
+              <div className={styles.availabilitySection}>
+                <h3>Available For</h3>
+                <p>{selectedUser.availabilityReason}</p>
+              </div>
+              <div className={styles.requestSection}>
+                <textarea
+                  className={styles.requestMessage}
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  placeholder="Send a message with your hangout request..."
+                ></textarea>
+                <div className={styles.actionButtons}>
+                  <button
+                    className={styles.chatButton}
+                    onClick={goToChat}
+                  >
+                    <FaRegCommentDots size={18} />
+                    Chat
+                  </button>
+                  <button
+                    className={styles.sendRequestButton}
+                    onClick={sendHangoutRequest}
+                    disabled={!requestMessage.trim()}
+                  >
+                    <IoMdSend size={18} />
+                    Send Request
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success/Notification Popups */}
+      {showRequestSuccessPopup && (
+        <div className={styles.successPopup}>
+          <FaHeart size={24} />
+          <p>Hangout request sent successfully!</p>
+          <p className={styles.successSubtext}>You'll be notified when they respond</p>
+        </div>
+      )}
+      
+      {/* Example notification for acceptance (would normally come from backend) */}
+      {false && (
+        <div className={styles.notificationPopup}>
+          <div className={styles.notificationContent}>
+            <div className={styles.notificationHeader}>
+              <h3>Hangout Request</h3>
+              <button className={styles.closeButton}>&times;</button>
+            </div>
+            <div className={styles.notificationBody}>
+              <div className={styles.notificationPhoto} style={{ backgroundImage: `url(${mockNearbyUsers[0].photo})` }}></div>
+              <div className={styles.notificationText}>
+                <p><strong>{mockNearbyUsers[0].name}</strong> wants to hang out for coffee!</p>
+                <p className={styles.notificationMessage}>"Would you like to grab coffee at Central Park cafe?"</p>
+              </div>
+            </div>
+            <div className={styles.notificationActions}>
+              <button className={styles.declineButton}>Decline</button>
+              <button className={styles.acceptButton}>
+                <FaCheck size={14} /> Accept
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default HangoutPage;

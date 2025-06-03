@@ -1,0 +1,232 @@
+.notificationContainer {
+  position: static;
+  display: inline-block;
+}
+
+.notificationIcon {
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.notificationIcon:hover {
+  transform: scale(1.1);
+}
+
+.badge {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: #ff4e8e;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.dropdown {
+  position: fixed;
+  top: 140px;
+  right: 20px;
+  width: 350px;
+  max-height: 500px;
+  background: rgba(255, 255, 255, 0.15);
+  background-image: linear-gradient(135deg, rgba(255, 78, 142, 0.6) 0%, rgba(123, 47, 246, 0.6) 100%);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(123, 47, 246, 0.25);
+  z-index: 1000;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header {
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: white;
+  font-weight: 700;
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFD6EF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+.notificationList {
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.notificationList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.notificationList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.notificationList::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.notificationItem {
+  padding: 15px;
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+
+.notificationItem:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.unread {
+  background-color: rgba(255, 78, 142, 0.15);
+}
+
+.unread:hover {
+  background-color: rgba(255, 78, 142, 0.25);
+}
+
+.avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 12px;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  flex: 1;
+}
+
+.message {
+  font-size: 14px;
+  color: white;
+  margin-bottom: 4px;
+  line-height: 1.4;
+  word-break: break-word;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.username {
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFD6EF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.messagePreview {
+  margin: 5px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.timeInfo {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.actionButton {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.acceptButton {
+  background: linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.acceptButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px rgba(255, 78, 142, 0.5), 0 0 5px rgba(123, 47, 246, 0.3);
+}
+
+.declineButton {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.declineButton:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 15px;
+}

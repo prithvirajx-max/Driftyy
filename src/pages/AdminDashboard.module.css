@@ -1,0 +1,994 @@
+.adminDashboardContainer {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  font-family: 'Poppins', sans-serif;
+  color: white;
+  background: linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%);
+}
+
+/* Sidebar Styles */
+.sidebar {
+  width: 260px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.sidebarHeader {
+  padding: 25px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebarHeader h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #FF4E8E, #7B2FF6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.sidebarNav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+}
+
+.navButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 25px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.navButton:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.navButton.active {
+  color: white;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.navButton.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(to bottom, #FF4E8E, #7B2FF6);
+}
+
+.sidebarFooter {
+  padding: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.logoutButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Main Content Styles */
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+.dashboardHeader {
+  padding: 20px 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.dashboardHeader h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.notificationIcon {
+  position: relative;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #FF4E8E;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.adminProfile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.adminProfile:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dashboardContent {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/* Overview Tab Styles */
+.overviewContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.statCard {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.statIcon {
+  background: rgba(255, 255, 255, 0.2);
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.usersCard .statIcon {
+  background: linear-gradient(45deg, #FF4E8E, #FF8E9F);
+}
+
+.activeCard .statIcon {
+  background: linear-gradient(45deg, #7B2FF6, #9867C5);
+}
+
+.messagesCard .statIcon {
+  background: linear-gradient(45deg, #FF4E8E, #FF8E9F);
+}
+
+.matchesCard .statIcon {
+  background: linear-gradient(45deg, #7B2FF6, #9867C5);
+}
+
+.verifiedUsersCard .statIcon {
+  background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+}
+
+.statInfo {
+  flex: 1;
+}
+
+.statInfo h3 {
+  margin: 0 0 5px 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.statValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.statTrend {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.activitySection {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.activitySection h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  color: white;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.activityItem {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.activityIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.activityDetails {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.activityUser {
+  font-weight: 600;
+  font-size: 1rem;
+  color: white;
+}
+
+.activityType {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.activityTime {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 3px;
+}
+
+/* Users Tab Styles */
+.usersContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.userControls {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.searchBox {
+  flex: 1;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 78, 142, 0.3);
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.filterBox {
+  position: relative;
+  width: 180px;
+}
+
+.filterIcon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.filterSelect {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filterSelect:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 78, 142, 0.3);
+}
+
+.usersTable {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.headerCell {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: white;
+}
+
+.tableBody {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 1fr;
+  padding: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.tableRow:last-child {
+  border-bottom: none;
+}
+
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.userName {
+  font-weight: 600;
+  color: white;
+}
+
+.contactCell {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.userEmail, .userPhone {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.iconSmall {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.locationCell {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.joinedCell {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.joinDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.lastActive {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.statusCell {
+  display: flex;
+  align-items: center;
+}
+
+.statusBadge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.active {
+  background: rgba(46, 213, 115, 0.2);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.inactive {
+  background: rgba(255, 159, 67, 0.2);
+  color: #ff9f43;
+  border: 1px solid rgba(255, 159, 67, 0.3);
+}
+
+.suspended {
+  background: rgba(255, 71, 87, 0.2);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
+.actionsCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.actionButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.actionButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.deleteButton {
+  color: #ff4757;
+}
+
+.deleteButton:hover {
+  background: rgba(255, 71, 87, 0.2);
+  border-color: rgba(255, 71, 87, 0.3);
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.editModal, .deleteModal {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 15px;
+  padding: 30px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.editModal h2, .deleteModal h2 {
+  margin: 0 0 20px 0;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.deleteModal p {
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 25px;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.formRow label {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.formRow input, .formRow select {
+  padding: 12px 15px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.formRow input:focus, .formRow select:focus {
+  border-color: rgba(255, 78, 142, 0.5);
+  box-shadow: 0 0 0 2px rgba(255, 78, 142, 0.3);
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.cancelButton {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancelButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.saveButton {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #7B2FF6, #9867C5);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.saveButton:hover {
+  background: linear-gradient(90deg, #6926e0, #875bb8);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.confirmDelete {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #ff4757, #ff6b81);
+  border: none;
+  color: white;
+  font-weight: 600;
+}
+
+.confirmDelete:hover {
+  background: linear-gradient(90deg, #ff3a4c, #ff5e76);
+}
+
+/* Chats Tab Styles */
+.chatsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.viewingUserBanner {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.viewingUserBanner h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: white;
+}
+
+.backButton {
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.backButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chatsList {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.chatCard {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.chatHeader {
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chatParticipants {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.participant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.participant img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.participant span {
+  font-weight: 500;
+  color: white;
+}
+
+.chatSeparator {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.messagesContainer {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.messageItem {
+  display: flex;
+  gap: 10px;
+  max-width: 90%;
+}
+
+.user2Message {
+  align-self: flex-start;
+}
+
+.user1Message {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.messageSenderAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.messageContent {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 10px 15px;
+  position: relative;
+}
+
+.user1Message .messageContent {
+  background: rgba(255, 78, 142, 0.2);
+  border: 1px solid rgba(255, 78, 142, 0.3);
+}
+
+.user2Message .messageContent {
+  background: rgba(123, 47, 246, 0.2);
+  border: 1px solid rgba(123, 47, 246, 0.3);
+}
+
+.messageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.messageSender {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+}
+
+.messageTime {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.messageText {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chatActions {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.chatActionButton {
+  padding: 8px 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.chatActionButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chatActionButton.deleteButton {
+  background: rgba(255, 71, 87, 0.1);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  color: #ff4757;
+}
+
+.chatActionButton.deleteButton:hover {
+  background: rgba(255, 71, 87, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tableHeader, .tableRow {
+    grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+  }
+  
+  .locationCell {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .adminDashboardContainer {
+    flex-direction: column;
+  }
+  
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+  }
+  
+  .sidebarHeader, .sidebarFooter {
+    border: none;
+    padding: 0;
+  }
+  
+  .sidebarNav {
+    flex-direction: row;
+    padding: 0;
+    gap: 10px;
+  }
+  
+  .navButton {
+    padding: 10px 15px;
+  }
+  
+  .navButton.active::before {
+    display: none;
+  }
+  
+  .logoutButton {
+    padding: 8px 15px;
+  }
+  
+  .tableHeader, .tableRow {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  
+  .joinedCell, .locationCell {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .userControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filterBox {
+    width: 100%;
+  }
+  
+  .tableHeader, .tableRow {
+    grid-template-columns: 1fr 0.5fr;
+  }
+  
+  .userCell {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .contactCell, .statusCell {
+    display: none;
+  }
+}

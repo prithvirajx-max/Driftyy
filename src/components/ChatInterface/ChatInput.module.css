@@ -1,0 +1,281 @@
+.inputContainer {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.8) 0%, rgba(123, 47, 246, 0.8) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  gap: 12px;
+}
+
+.attachmentOptions {
+  display: flex;
+  gap: 8px;
+}
+
+.iconButton {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.iconButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.05);
+}
+
+.messageInputWrapper {
+  flex: 1;
+  position: relative;
+}
+
+.messageInput {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border-radius: 24px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: white;
+  font-size: 15px;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.messageInput::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.messageInput:focus {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.emojiButton {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emojiButton:hover {
+  transform: translateY(-50%) scale(1.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.emojiPickerContainer {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  z-index: 10;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.closeEmojiButton {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.sendButton {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: not-allowed;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.sendButton.active {
+  background: rgba(50, 217, 203, 0.8);
+  color: white;
+  cursor: pointer;
+}
+
+.sendButton.active:hover {
+  background: rgba(50, 217, 203, 1);
+  transform: scale(1.05);
+}
+
+/* Loading state for buttons */
+.loading {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+/* Spinning loader animation */
+.spinningLoader {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Location disabled state */
+.locationDisabled {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(244, 67, 54, 0.2);
+}
+
+/* Location notification */
+.locationNotice {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  background: rgba(244, 67, 54, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  width: 250px;
+  display: flex;
+  align-items: center;
+  color: white;
+  font-size: 0.85rem;
+  animation: slideIn 0.3s ease;
+  z-index: 10;
+}
+
+.locationNotice p {
+  margin: 0;
+  flex: 1;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.locationOffIcon {
+  font-size: 1.2rem;
+  min-width: 20px;
+  color: white;
+}
+
+.closeNoticeButton {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.closeNoticeButton:hover {
+  color: white;
+  transform: scale(1.1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reply preview styles */
+.replyPreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border-left: 3px solid #32D9CB;
+  width: 100%;
+}
+
+.replyPreviewContent {
+  flex: 1;
+  overflow: hidden;
+}
+
+.replyingToText {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.replyingToName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #32D9CB;
+}
+
+.replyPreviewText {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 2px 0 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cancelReplyButton {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.cancelReplyButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+}

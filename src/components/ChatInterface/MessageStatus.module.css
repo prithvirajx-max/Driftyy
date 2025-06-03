@@ -1,0 +1,21 @@
+.statusContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.time {
+  margin-right: 2px;
+}
+
+.icon {
+  width: 14px;
+  height: 14px;
+}
+
+.read {
+  color: #32d9cb;
+}

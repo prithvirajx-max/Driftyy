@@ -1,0 +1,236 @@
+/* Main container for full page scrolling */
+.container {
+  height: 100vh;
+  width: 100vw;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  background: linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%);
+  position: relative;
+}
+
+/* Fixed Message Icon */
+.messageIcon {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #7B2FF6;
+}
+
+.notificationIcon {
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 1000;
+  background: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #7B2FF6;
+}
+
+.messageIcon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+  background: #f8f8f8;
+}
+
+/* Full-height section with snap behavior */
+.section {
+  height: 100vh;
+  width: 100%;
+  scroll-snap-align: start;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Content wrapper with glassmorphism effect */
+.content {
+  width: 90%;
+  max-width: 700px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(123, 47, 246, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  text-align: center;
+  color: white;
+}
+
+/* Logo positioning at the top */
+.logoContainer {
+  position: absolute;
+  top: 2rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+}
+
+/* Logo styling */
+.logo {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFD6EF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(255, 78, 142, 0.4);
+}
+
+/* Icon container for feature icons */
+.iconContainer {
+  margin-bottom: 2rem;
+  color: white;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.7) 0%, rgba(123, 47, 246, 0.7) 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(255, 78, 142, 0.4);
+  backdrop-filter: blur(5px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Text container for title and description */
+.textContainer {
+  max-width: 90%;
+  margin-bottom: 3rem;
+}
+
+/* Section title styling */
+.title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFD6EF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+}
+
+/* Description paragraph styling */
+.description {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.description p {
+  margin: 0.5rem 0;
+}
+
+/* Action button styling - glowing pill style */
+.actionButton {
+  background: linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 1rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 0 15px rgba(255, 78, 142, 0.4), 0 0 5px rgba(123, 47, 246, 0.3);
+  outline: none;
+  z-index: 10;
+}
+
+.actionButton::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  background: linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%);
+  border-radius: 999px;
+  z-index: -1;
+  opacity: 0.4;
+  filter: blur(10px);
+  transition: opacity 0.3s ease;
+}
+
+.actionButton:hover::after {
+  opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .title {
+    font-size: 2rem;
+  }
+  
+  .description {
+    font-size: 1rem;
+  }
+  
+  .iconContainer {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .actionButton {
+    padding: 0.8rem 2rem;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .content {
+    padding: 1.5rem;
+    height: 90vh;
+  }
+  
+  .title {
+    font-size: 1.8rem;
+  }
+  
+  .description {
+    font-size: 0.9rem;
+  }
+  
+  .iconContainer {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .actionButton {
+    padding: 0.7rem 1.8rem;
+    font-size: 1rem;
+  }
+}

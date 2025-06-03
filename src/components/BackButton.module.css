@@ -1,0 +1,48 @@
+.backButton {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #7B2FF6;
+  backdrop-filter: blur(8px) saturate(180%);
+  -webkit-backdrop-filter: blur(8px) saturate(180%);
+}
+
+.backButton:hover {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.backButton svg {
+  color: #7B2FF6;
+  width: 28px;
+  height: 28px;
+}
+
+
+.backButton:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* For pages with gradients or dark backgrounds */
+.backButtonAlt {
+  background: rgba(0, 0, 0, 0.2);
+  color: white;
+}
+
+.backButtonAlt:hover {
+  background: rgba(0, 0, 0, 0.3);
+}

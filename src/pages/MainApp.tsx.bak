@@ -1,0 +1,439 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  FaUser, 
+  FaVideo, 
+  FaLocationArrow, 
+  FaUsers, 
+  FaCog, 
+  FaHeart, 
+  FaTimes, 
+  FaComment, 
+  FaMicrophone,
+  FaMicrophoneSlash,
+  FaStopCircle,
+  FaUserFriends,
+  FaCoffee,
+  FaWalking,
+  FaChevronRight,
+  FaChevronLeft,
+  FaBell
+} from 'react-icons/fa';
+import styles from './MainApp.module.css';
+
+// Mock data for profiles
+const mockProfiles = [
+  { id: 1, name: 'Alex', age: 28, bio: 'Love hiking and photography', distance: '2 miles away', img: 'https://randomuser.me/api/portraits/men/32.jpg' },
+  { id: 2, name: 'Jamie', age: 24, bio: 'Foodie and travel enthusiast', distance: '5 miles away', img: 'https://randomuser.me/api/portraits/women/44.jpg' },
+  { id: 3, name: 'Taylor', age: 26, bio: 'Art lover, painter, coffee addict', distance: '1 mile away', img: 'https://randomuser.me/api/portraits/women/63.jpg' },
+  { id: 4, name: 'Jordan', age: 30, bio: 'Musician and tech geek', distance: '3 miles away', img: 'https://randomuser.me/api/portraits/men/67.jpg' },
+];
+
+// Mock data for hangouts
+const hangoutOptions = [
+  { id: 1, activity: 'Coffee Chat', icon: <FaCoffee />, description: 'Grab a coffee and chat' },
+  { id: 2, activity: 'City Walk', icon: <FaWalking />, description: 'Explore the neighborhood' },
+  { id: 3, activity: 'Group Hangout', icon: <FaUsers />, description: 'Join a local group' },
+  { id: 4, activity: 'Quick Meet', icon: <FaUserFriends />, description: 'Quick 15-min meetup' },
+];
+
+const MainApp: React.FC = () => {
+  // State for current tab in right panel
+  const [activeTab, setActiveTab] = useState<'explore' | 'hangout' | 'profile'>('explore');
+  
+  // Video chat states
+  const [videoMuted, setVideoMuted] = useState(false);
+  const [videoActive, setVideoActive] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  
+  // Explore tab states
+  const [currentProfile, setCurrentProfile] = useState(0);
+  const [showProfileDetails, setShowProfileDetails] = useState(false);
+  
+  // Handler for profile navigation
+  const nextProfile = () => {
+    setCurrentProfile((prev) => (prev + 1) % mockProfiles.length);
+  };
+
+  // Video chat connection animation
+  const handleFindVideoChat = () => {
+    setConnecting(true);
+    setTimeout(() => {
+      setConnecting(false);
+      setVideoActive(true);
+    }, 2000);
+  };
+  
+  useEffect(() => {
+    // Initialize the app
+    document.body.classList.add(styles.appBody);
+    
+    return () => {
+      document.body.classList.remove(styles.appBody);
+    };
+  }, []);
+  
+  return (
+    <div className={styles.appContainer}>
+      {/* Top Navigation */}
+      <header className={styles.header}>
+        <div className={styles.logo}>Drifty</div>
+        <motion.div 
+          className={styles.profileIcon}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <FaUser />
+        </motion.div>
+      </header>
+
+      {/* Main Split-Screen Content Layout */}
+      <main className={styles.splitLayout}>
+        {/* Left Panel - Video Chat (Always Visible) */}
+        <section className={styles.videoPanel}>
+            <div className={styles.videoContainer}>
+              {connecting ? (
+                <div className={styles.connecting}>
+                  <motion.div 
+                    className={styles.pulse}
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      opacity: [0.7, 1, 0.7]
+                    }}
+                    transition={{ 
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatType: "loop"
+                    }}
+                  >
+                    <FaVideo size={40} />
+                  </motion.div>
+                  <p>Connecting...</p>
+                </div>
+              ) : (
+                <div className={styles.videoFrame}>
+                  <div className={styles.noVideo}>
+                    <p>Click 'Next' to start video chatting</p>
+                  </div>
+                  <div className={styles.videoControls}>
+                    <motion.button 
+                      className={styles.controlBtn}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 78, 142, 0.8)' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleFindVideoChat()}
+                    >
+                      <FaVideo /> Next
+                    </motion.button>
+                    <motion.button 
+                      className={`${styles.controlBtn} ${videoMuted ? styles.active : ''}`}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(123, 47, 246, 0.8)' }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setVideoMuted(!videoMuted)}
+                    >
+                      {videoMuted ? <FaMicrophoneSlash /> : <FaMicrophone />}
+                      {videoMuted ? 'Unmute' : 'Mute'}
+                    </motion.button>
+                    <motion.button 
+                      className={`${styles.controlBtn} ${styles.endBtn}`}
+                      whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 78, 142, 0.8)' }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <FaStopCircle /> End
+                    </motion.button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Explore Nearby Profiles */}
+        {activeTab === 'explore' && (
+          <motion.div 
+            className={styles.tabContent}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className={styles.exploreContainer}>
+              <motion.div 
+                className={styles.profileCard}
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.7}
+                onDragEnd={(_, info) => {
+                  if (info.offset.x > 100) {
+                    // Swiped right
+                    nextProfile();
+                  } else if (info.offset.x < -100) {
+                    // Swiped left
+                    nextProfile();
+                  }
+                }}
+              >
+                <div 
+                  className={styles.profileImage} 
+                  style={{ backgroundImage: `url(${mockProfiles[currentProfile].img})` }}
+                />
+                <div className={styles.profileInfo}>
+                  <h2>{mockProfiles[currentProfile].name}, {mockProfiles[currentProfile].age}</h2>
+                  <p>{mockProfiles[currentProfile].distance}</p>
+                  <p className={styles.profileBio}>{mockProfiles[currentProfile].bio}</p>
+                </div>
+                <div className={styles.profileActions}>
+                  <motion.button 
+                    className={`${styles.actionBtn} ${styles.skipBtn}`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={nextProfile}
+                  >
+                    <FaTimes />
+                  </motion.button>
+                  <motion.button 
+                    className={`${styles.actionBtn} ${styles.likeBtn}`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={nextProfile}
+                  >
+                    <FaHeart />
+                  </motion.button>
+                  <motion.button 
+                    className={`${styles.actionBtn} ${styles.messageBtn}`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <FaComment />
+                  </motion.button>
+                </div>
+              </motion.div>
+              <div className={styles.exploreHelp}>
+                <p>Swipe or use buttons to navigate profiles</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Hangout Section */}
+        {activeTab === 'hangout' && (
+          <motion.div 
+            className={styles.tabContent}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className={styles.hangoutContainer}>
+              <h2 className={styles.sectionTitle}>Find Spontaneous Hangouts</h2>
+              <div className={styles.hangoutGrid}>
+                {hangoutOptions.map((option) => (
+                  <motion.div 
+                    key={option.id}
+                    className={styles.hangoutCard}
+                    whileHover={{ 
+                      scale: 1.05, 
+                      boxShadow: '0 8px 25px rgba(255, 78, 142, 0.25)' 
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className={styles.hangoutIcon}>
+                      {option.icon}
+                    </div>
+                    <h3>{option.activity}</h3>
+                    <p>{option.description}</p>
+                    <motion.button 
+                      className={styles.hangoutBtn}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Send Request
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </div>
+              <div className={styles.nearbyActivities}>
+                <h3>Active Now Nearby</h3>
+                <div className={styles.activityList}>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityAvatar}>
+                      <img src="https://randomuser.me/api/portraits/women/22.jpg" alt="User" />
+                    </div>
+                    <div className={styles.activityInfo}>
+                      <h4>Sarah, 26</h4>
+                      <p>Coffee at Lunar Cafe (0.5 miles away)</p>
+                    </div>
+                    <motion.button 
+                      className={styles.joinBtn}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Join
+                    </motion.button>
+                  </div>
+                  <div className={styles.activityItem}>
+                    <div className={styles.activityAvatar}>
+                      <img src="https://randomuser.me/api/portraits/men/54.jpg" alt="User" />
+                    </div>
+                    <div className={styles.activityInfo}>
+                      <h4>Mike, 30</h4>
+                      <p>City Park Walk (1.2 miles away)</p>
+                    </div>
+                    <motion.button 
+                      className={styles.joinBtn}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Join
+                    </motion.button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Profile Section */}
+        {activeTab === 'profile' && (
+          <motion.div 
+            className={styles.tabContent}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className={styles.profileContainer}>
+              <div className={styles.profileHeader}>
+                <div className={styles.userAvatar}>
+                  <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Profile" />
+                  <motion.button 
+                    className={styles.editProfileBtn}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Edit
+                  </motion.button>
+                </div>
+                <div className={styles.userInfo}>
+                  <h2>Alex Johnson</h2>
+                  <p>28 • New York City</p>
+                </div>
+              </div>
+              
+              <div className={styles.profileSection}>
+                <h3>About Me</h3>
+                <div className={styles.glassCard}>
+                  <p>Passionate photographer, coffee enthusiast, and avid hiker. Looking to meet new people and explore the city together.</p>
+                </div>
+              </div>
+              
+              <div className={styles.profileSection}>
+                <h3>Interests</h3>
+                <div className={styles.interestTags}>
+                  {['Photography', 'Coffee', 'Hiking', 'Art', 'Music', 'Travel'].map((interest, idx) => (
+                    <motion.span 
+                      key={idx}
+                      className={styles.interestTag}
+                      whileHover={{ scale: 1.05 }}
+                    >
+                      {interest}
+                    </motion.span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className={styles.profileSection}>
+                <h3>Preferences</h3>
+                <div className={styles.glassCard}>
+                  <div className={styles.preference}>
+                    <span>Looking for</span>
+                    <span>Friends, Dating</span>
+                  </div>
+                  <div className={styles.preference}>
+                    <span>Age Range</span>
+                    <span>24-35</span>
+                  </div>
+                  <div className={styles.preference}>
+                    <span>Distance</span>
+                    <span>Within 10 miles</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={styles.profileSection}>
+                <h3>Account Settings</h3>
+                <div className={styles.glassCard}>
+                  <motion.button 
+                    className={styles.settingBtn}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FaCog /> Privacy Settings
+                  </motion.button>
+                  <motion.button 
+                    className={styles.settingBtn}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FaCog /> Notification Preferences
+                  </motion.button>
+                  <motion.button 
+                    className={`${styles.settingBtn} ${styles.logoutBtn}`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Logout
+                  </motion.button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </main>
+
+      {/* Bottom Navigation Tabs */}
+      <nav className={styles.tabBar}>
+        <motion.button 
+          className={`${styles.tabButton} ${activeTab === 'video' ? styles.active : ''}`}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setActiveTab('video')}
+        >
+          <FaVideo />
+          <span>Video</span>
+        </motion.button>
+        <motion.button 
+          className={`${styles.tabButton} ${activeTab === 'explore' ? styles.active : ''}`}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setActiveTab('explore')}
+        >
+          <FaLocationArrow />
+          <span>Explore</span>
+        </motion.button>
+        <motion.button 
+          className={`${styles.tabButton} ${activeTab === 'hangout' ? styles.active : ''}`}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setActiveTab('hangout')}
+        >
+          <FaUsers />
+          <span>Hangout</span>
+        </motion.button>
+        <motion.button 
+          className={`${styles.tabButton} ${activeTab === 'profile' ? styles.active : ''}`}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setActiveTab('profile')}
+        >
+          <FaUser />
+          <span>Profile</span>
+        </motion.button>
+      </nav>
+    </div>
+  );
+};
+
+export default MainApp;

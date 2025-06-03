@@ -1,0 +1,23 @@
+/* Global fix for MotionComponent centering */
+[data-component-name="MotionComponent"] {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+}
+
+/* Container fix for proper positioning context */
+div:has([data-component-name="MotionComponent"]) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+}
