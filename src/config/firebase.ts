@@ -1,10 +1,4 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-
-// Use environment variables for Firebase configuration
-const firebaseConfig = {
+// Firebase config removed. This file is no longer needed.
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDrifty5DatingApp2023KeyXYZ",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "drifty-dating-app.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "drifty-dating-app",

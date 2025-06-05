@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../contexts/AuthContext";
 import { FcGoogle } from 'react-icons/fc';
@@ -32,16 +32,21 @@ export const AuthModal: React.FC<{
   useOutsideClick(modalRef, onClose);
   
   // Get auth functions from context
-  const { loginWithGoogle, loginWithFacebook, isLoading } = useAuth();
+  const { loginWithGoogle, isAuthenticated } = useAuth();
+  const [isGoogleLoginProcessing, setIsGoogleLoginProcessing] = useState(false);
 
-  // Handle social login buttons
+  // Handle Google login button
   const handleGoogleLogin = () => {
+    setIsGoogleLoginProcessing(true);
     loginWithGoogle();
   };
 
-  const handleFacebookLogin = () => {
-    loginWithFacebook();
-  };
+  useEffect(() => {
+    if (isAuthenticated || !open) {
+      setIsGoogleLoginProcessing(false);
+    }
+  }, [isAuthenticated, open]);
+
 
   // Toggle between login and signup modes
   const toggleMode = () => {
@@ -97,23 +102,28 @@ export const AuthModal: React.FC<{
       </div>
       
       <button
-        onClick={handleGoogleLogin}
-        disabled={isLoading}
+        onClick={() => {
+          // Do NOT close modal or navigate away here
+          handleGoogleLogin();
+        }}
+        disabled={isGoogleLoginProcessing}
         className={`${socialButton}`}
       >
         <FcGoogle size={24} />
-        <span>{isLoading ? "Please wait..." : "Continue with Google"}</span>
+        <span>{isGoogleLoginProcessing ? "Please wait..." : "Continue with Google"}</span>
       </button>
-      
-      <button
-        onClick={handleFacebookLogin}
-        disabled={isLoading}
-        className={`${socialButton} bg-blue-500/10 hover:bg-blue-500/20 text-blue-900`}
-      >
-        <FaFacebook size={24} color="#4267B2" />
-        <span>{isLoading ? "Please wait..." : "Continue with Facebook"}</span>
-      </button>
-      
+      {isGoogleLoginProcessing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl p-8 shadow-lg flex flex-col items-center">
+            <svg className="animate-spin h-7 w-7 text-pink-500 mb-3" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+            </svg>
+            <span className="text-pink-600 font-medium">Redirecting to Google...</span>
+          </div>
+        </div>
+      )}
+
       <div className="relative my-2">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-300/50"></div>
@@ -140,10 +150,14 @@ export const AuthModal: React.FC<{
             className="w-full max-w-md"
           >
             <div className={`${glassCard} shadow-pink-500/10`} ref={modalRef}>
+              {/* Disable closing modal by clicking close button if loading */}
               <button
-                onClick={onClose}
+                onClick={() => {
+                  if (!isGoogleLoginProcessing) onClose();
+                }}
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
                 aria-label="Close"
+                disabled={isGoogleLoginProcessing}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
