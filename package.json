@@ -12,6 +12,7 @@
     "fix-ports": "kill-port 5173 3000"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.12.2",
     "@tanstack/react-query": "^5.75.1",
     "@types/date-fns": "^2.5.3",
     "@types/styled-components": "^5.1.34",

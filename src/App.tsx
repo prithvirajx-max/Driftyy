@@ -17,10 +17,13 @@ import AppProvider from './contexts/AppProvider';
 import { AdminRoute } from './components/auth/AuthRoutes';
 import AuthRoutes from './components/auth/AuthRoutes';
 
+import { DriftyyGoogleOAuthProvider } from './GoogleOAuthProvider';
+
 function App() {
   return (
-    <AppProvider>
-      <Router>
+    <DriftyyGoogleOAuthProvider>
+      <AppProvider>
+        <Router>
         <BackButton />
         <Routes>
           <Route path="/" element={<HomePage />} />
@@ -47,7 +50,8 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminRoute element={<AdminDashboard />} />} />
         </Routes>
       </Router>
-    </AppProvider>
+      </AppProvider>
+    </DriftyyGoogleOAuthProvider>
   );
 }
 
