@@ -434,14 +434,33 @@
 }
 .footerLinks {
   display: flex;
-  gap: 1.6rem;
+  gap: 1rem; /* Reduced gap */
   font-size: 0.97rem;
+  flex-wrap: wrap; /* Allow wrapping on medium screens if needed */
+  justify-content: center; /* Center links if they wrap */
 }
+
 .footerLinks a {
   color: white;
   text-decoration: none;
-  margin: 0 15px;
+  /* margin: 0 15px; */ /* Removed margin to rely on gap */
   transition: all 0.3s ease;
+  padding: 0.3rem 0.5rem; /* Add some padding for better touch targets */
+}
+
+/* Mobile responsiveness for footer links */
+@media (max-width: 600px) {
+  .footerLinks {
+    /* flex-direction: column; */ /* Removed to keep horizontal alignment */
+    /* align-items: center; */ /* Not needed if justify-content: center is active */
+    gap: 0.5rem; /* Further reduced gap for smaller screens if they wrap */
+    justify-content: center; /* Ensure they stay centered */
+  }
+
+  .footerLinks a {
+    font-size: 0.9rem; /* Adjusted font size for mobile horizontal layout */
+    padding: 0.25rem 0.4rem; /* Adjusted padding for mobile horizontal layout */
+  }
 }
 
 .adminLink {
@@ -516,5 +535,130 @@
     flex-direction: column;
     gap: 0.8rem;
     width: 100%;
+  }
+}
+
+/* About Modal Styles */
+.aboutModalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.aboutModalCard {
+  background: linear-gradient(135deg, rgba(255, 78, 142, 0.15), rgba(123, 47, 246, 0.15)); /* Pink to Violet gradient, subtle */
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%); /* For Safari */
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.125);
+  padding: 30px 40px;
+  color: white;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  text-align: center; /* Center content like image and initial heading */
+}
+
+.aboutModalCloseButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: color 0.2s ease, transform 0.2s ease;
+  line-height: 1; /* Ensures icon is centered in button area */
+}
+
+.aboutModalCloseButton:hover {
+  color: white;
+  transform: scale(1.1);
+}
+
+.aboutModalImage {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 25px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.aboutModalTextContent {
+  text-align: left; /* Align paragraphs to the left for readability */
+}
+
+.aboutModalTextContent h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center; /* Keep heading centered */
+  background: linear-gradient(90deg, #FF4E8E, #7B2FF6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.aboutModalTextContent p {
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-bottom: 15px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive adjustments for the modal */
+@media (max-width: 768px) {
+  .aboutModalCard {
+    padding: 25px 30px;
+    max-width: 90%;
+  }
+  .aboutModalImage {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+  }
+  .aboutModalTextContent h2 {
+    font-size: 1.6rem;
+  }
+  .aboutModalTextContent p {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .aboutModalCard {
+    padding: 20px;
+    border-radius: 15px;
+  }
+  .aboutModalImage {
+    width: 100px;
+    height: 100px;
+  }
+  .aboutModalTextContent h2 {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+  }
+  .aboutModalTextContent p {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+  .aboutModalCloseButton {
+    top: 15px;
+    right: 15px;
+    font-size: 1.6rem;
   }
 }

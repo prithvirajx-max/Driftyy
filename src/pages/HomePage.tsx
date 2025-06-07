@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import AuthModal from '../components/auth/AuthModal';
 import styles from './HomePage.module.css';
 import { motion } from 'framer-motion';
-import { FaUserFriends, FaVideo, FaComments, FaBolt, FaInstagram, FaYoutube, FaFacebook, FaUser, FaRegStar, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserFriends, FaVideo, FaComments, FaBolt, FaInstagram, FaYoutube, FaFacebook, FaUser, FaRegStar, FaSignOutAlt, FaTimes } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import LogoutConfirmationDialog from '../components/dialogs/LogoutConfirmationDialog';
+import prithviProfilePic from '../assets/images/prithvi-raj-profile.jpg'; // Assuming image is saved here
 
 const features = [
   {
@@ -40,6 +41,7 @@ const HomePage: React.FC = () => {
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showAboutModal, setShowAboutModal] = useState(false);
 
   const handleProtectedAction = (action: () => void) => {
     if (isAuthenticated && user) {
@@ -49,6 +51,9 @@ const HomePage: React.FC = () => {
       setAuthOpen(true);
     }
   };
+
+  const openAboutModal = () => setShowAboutModal(true);
+  const closeAboutModal = () => setShowAboutModal(false);
 
   // Specific handler for external links to allow default behavior if authenticated
   const handleExternalLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -201,7 +206,7 @@ const HomePage: React.FC = () => {
       </section>
       <footer className={styles.footer}>
         <div className={styles.footerLinks}>
-          <a href="#about" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link About clicked')); }}>About</a>
+          <a href="#about" onClick={(e) => { e.preventDefault(); openAboutModal(); }} style={{ cursor: 'pointer' }}>About</a>
           <a href="#terms" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Terms clicked')); }}>Terms</a>
           <a href="#contact" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Contact clicked')); }}>Contact</a>
           <a href="#privacy" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Privacy clicked')); }}>Privacy</a>
@@ -214,6 +219,38 @@ const HomePage: React.FC = () => {
         </div>
         <div className={styles.footerBrand}>© Drifty.</div>
       </footer>
+
+      {/* About Modal */}
+      {showAboutModal && (
+        <motion.div
+          className={styles.aboutModalOverlay}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={closeAboutModal} // Close modal when overlay is clicked
+        >
+          <motion.div
+            className={styles.aboutModalCard}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            onClick={(e) => e.stopPropagation()} // Prevent closing when card is clicked
+          >
+            <button className={styles.aboutModalCloseButton} onClick={closeAboutModal}>
+              <FaTimes />
+            </button>
+            <img src={prithviProfilePic} alt="Prithvi Raj - Founder of Drifty" className={styles.aboutModalImage} />
+            <div className={styles.aboutModalTextContent}>
+              <h2>Hi, I'm Prithvi Raj, the founder of Drifty.</h2>
+              <p>I'm a traveler, a seeker, and someone who deeply values real human connection. Through my journeys across different cultures and landscapes, I realized something powerful—we all crave connection, understanding, and a sense of belonging, no matter where we come from.</p>
+              <p>I created Drifty not just as another dating app, but as a space where authentic conversations and meaningful relationships can begin. In a world full of fast swipes and fake profiles, I wanted to build something different—something that feels human. A place where strangers can turn into companions, where love, friendship, and deep bonds can grow naturally, beyond algorithms.</p>
+              <p>Drifty is inspired by my own life—traveling solo, meeting new people, and discovering the beauty of connection in unexpected moments. It's for people who are open to drifting through life with purpose, with curiosity, and with the hope of finding someone who truly understands them. It's not just a dating platform It's a reflection of what I believe in: real people, real emotions, real stories.</p>
+              <p>Welcome to Drifty. Let's make meaningful connections.</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
