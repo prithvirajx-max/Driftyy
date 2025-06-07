@@ -5,7 +5,8 @@ import {
   uploadProfilePhoto, 
   setMainProfilePhoto, 
   deleteProfilePhoto, 
-  upload 
+  upload, 
+  syncUserProfileFromAuth 
 } from '../controllers/profileController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 
@@ -20,6 +21,9 @@ router.get('/:userId', getProfile);
 
 // Update profile
 router.put('/update', updateProfile);
+
+// Sync core user data from auth provider (e.g., after Firebase Google Sign-In)
+router.post('/:userId/sync-auth', syncUserProfileFromAuth);
 
 // Photo management
 router.post('/upload-photo', upload.single('photo'), uploadProfilePhoto);

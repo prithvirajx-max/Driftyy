@@ -1,3 +1,12 @@
+export interface ProfilePhoto {
+  id: string;
+  storageUrl?: string; 
+  file?: File;        
+  previewUrl?: string; 
+  uploadProgress?: number; 
+  error?: string;      
+}
+
 export interface User {
   id: string;
   name: string;
@@ -5,7 +14,7 @@ export interface User {
   gender: 'male' | 'female' | 'non-binary' | 'other';
   bio: string;
   interests: string[];
-  photos: string[];
+  photos: ProfilePhoto[];
   location: {
     city: string;
     state: string;

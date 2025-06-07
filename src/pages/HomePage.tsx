@@ -40,10 +40,24 @@ const HomePage: React.FC = () => {
   const [authTab, setAuthTab] = useState<'login' | 'signup'>('login');
   const { user, isAuthenticated, logout } = useAuth();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  
-  const handleStartNow = () => {
-    // Allow direct navigation to experience without requiring login
-    navigate('/experience');
+
+  const handleProtectedAction = (action: () => void) => {
+    if (isAuthenticated && user) {
+      action();
+    } else {
+      setAuthTab('signup');
+      setAuthOpen(true);
+    }
+  };
+
+  // Specific handler for external links to allow default behavior if authenticated
+  const handleExternalLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isAuthenticated) {
+      e.preventDefault();
+      setAuthTab('signup');
+      setAuthOpen(true);
+    }
+    // If authenticated, allow the default <a> tag behavior (opening the link)
   };
   
   const handleLogoutClick = () => {
@@ -71,18 +85,18 @@ const HomePage: React.FC = () => {
       {/* Floating Glassmorphism Auth Buttons or User Profile (fixed to viewport) */}
       <div className={styles.floatingAuthBtns}>
         {isAuthenticated && user ? (
-          <>
+          <> 
             <div className={`${styles.authPillBtn} ${styles.userProfile}`}>
-              {user.photoURL ? (
+              {user.picture ? (
                 <img 
-                  src={user.photoURL} 
-                  alt={user.displayName} 
+                  src={user.picture} 
+                  alt={user.name} 
                   className={styles.userAvatar} 
                 />
               ) : (
                 <FaUser size={18} />
               )}
-              <span className={styles.username}>{user.displayName}</span>
+              <span className={styles.username}>{user.name}</span>
             </div>
             <button
               className={`${styles.authPillBtn} ${styles.logout}`}
@@ -147,7 +161,7 @@ const HomePage: React.FC = () => {
             className={styles.startNowBtn}
             whileHover={{ scale: 1.08, y: -4 }}
             transition={{ type: 'spring', stiffness: 300 }}
-            onClick={handleStartNow}
+            onClick={() => handleProtectedAction(() => navigate('/experience'))}
           >
             Start Now
           </motion.button>
@@ -155,6 +169,10 @@ const HomePage: React.FC = () => {
             className={styles.howItWorksBtn}
             whileHover={{ scale: 1.04, boxShadow: '0 0 12px #7B2FF6' }}
             transition={{ type: 'spring', stiffness: 200 }}
+            onClick={() => handleProtectedAction(() => {
+              // TODO: Define action for authenticated users (e.g., scroll to a section)
+              console.log('"See How It Works" clicked by authenticated user');
+            })}
           >
             See How It Works
           </motion.button>
@@ -169,7 +187,7 @@ const HomePage: React.FC = () => {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 + idx * 0.1 }}
-            onClick={() => navigate(feature.path)}
+            onClick={() => handleProtectedAction(() => navigate(feature.path))}
             style={{ cursor: 'pointer' }}
             whileHover={{ scale: 1.05, boxShadow: '0 8px 30px rgba(255, 78, 142, 0.2)' }}
           >
@@ -183,16 +201,16 @@ const HomePage: React.FC = () => {
       </section>
       <footer className={styles.footer}>
         <div className={styles.footerLinks}>
-          <a href="#about">About</a>
-          <a href="#terms">Terms</a>
-          <a href="#contact">Contact</a>
-          <a href="#privacy">Privacy</a>
-          <a href="/admin" className={styles.adminLink}>Admin</a>
+          <a href="#about" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link About clicked')); }}>About</a>
+          <a href="#terms" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Terms clicked')); }}>Terms</a>
+          <a href="#contact" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Contact clicked')); }}>Contact</a>
+          <a href="#privacy" onClick={(e) => { e.preventDefault(); handleProtectedAction(() => console.log('Footer link Privacy clicked')); }}>Privacy</a>
+          <a href="/admin" className={styles.adminLink} onClick={(e) => { e.preventDefault(); handleProtectedAction(() => navigate('/admin')); }}>Admin</a>
         </div>
         <div className={styles.socialIcons}>
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer"><FaInstagram /></a>
-          <a href="https://youtube.com" target="_blank" rel="noopener noreferrer"><FaYoutube /></a>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer"><FaFacebook /></a>
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" onClick={handleExternalLinkClick}><FaInstagram /></a>
+          <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" onClick={handleExternalLinkClick}><FaYoutube /></a>
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" onClick={handleExternalLinkClick}><FaFacebook /></a>
         </div>
         <div className={styles.footerBrand}>© Drifty.</div>
       </footer>

@@ -1,10 +1,10 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Your Firebase configuration (from your project settings)
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyC6JqftUrkqafSpvI4iZ0GDTKrAtjnedws",
   authDomain: "driftyy-c8fe9.firebaseapp.com",
   projectId: "driftyy-c8fe9",
@@ -14,8 +14,8 @@ const firebaseConfig = {
   measurementId: "G-4K157NSSE5" // Optional for Firebase JS SDK v7.20.0 and later
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if no apps are initialized
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);

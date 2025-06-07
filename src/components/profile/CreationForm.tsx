@@ -2,8 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { FaPlus, FaCheck, FaTimes, FaCamera } from 'react-icons/fa';
 import styles from './ProfileCreation.module.css';
-import { User } from '../../types/user';
+import { User, ProfilePhoto } from '../../types/user';
 import { v4 as uuidv4 } from 'uuid';
+// Cascade: Adding Firebase and axios imports
+import axios from 'axios';
+import { getAuth, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { db, storage, auth } from '../../firebaseConfig'; // auth is the initialized Firebase auth instance
 
 // Interests options
 const INTERESTS = [
@@ -117,6 +123,11 @@ const LANGUAGE_OPTIONS = [
   'Japanese', 'Korean', 'Hindi', 'Arabic', 'Russian', 'Portuguese', 'Indonesian'
 ];
 
+// Firebase GoogleAuthProvider and signInWithPopup are no longer used here.
+// Google Sign-In is handled by AuthContext via @react-oauth/google.
+
+// Firebase app, auth, and db instances are now imported from '../../firebaseConfig.ts'
+
 interface ProfileCreationProps {
   onProfileSaved?: () => void;
   existingProfile?: User;
@@ -124,7 +135,167 @@ interface ProfileCreationProps {
   isEditing?: boolean;
 }
 
+// Firebase GoogleAuthProvider setup
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
 export default function ProfileCreation(props: ProfileCreationProps) {
+  // Cascade: Adding auth state and logic
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+
+  const handleFirebaseGoogleSignIn = async () => {
+    if (!auth) {
+      setAuthError("Firebase authentication service is not initialized.");
+      return;
+    }
+    setAuthError(null);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // onAuthStateChanged will handle setting firebaseUser and authLoading
+      alert("Sign-in successful! Please try saving your profile again.");
+    } catch (err: any) {
+      console.error("Google sign-in failed:", err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setAuthError('Sign-in popup closed. Please try again.');
+      } else if (err.code === 'auth/cancelled-popup-request') {
+        setAuthError('Sign-in cancelled. Please try again.');
+      } else {
+        setAuthError(err.message || "An error occurred during Google sign-in.");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!auth) { // Check if Firebase auth was initialized
+      setAuthLoading(false);
+      setAuthError("Firebase authentication service is not initialized. Please check your Firebase configuration.");
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, async (currentFirebaseUser) => {
+      console.log('[Auth] onAuthStateChanged: firebaseUser:', currentFirebaseUser);
+      setFirebaseUser(currentFirebaseUser);
+      if (currentFirebaseUser) {
+        setProfile((prevProfile) => ({ // Set ID immediately
+          ...prevProfile,
+          id: currentFirebaseUser.uid,
+          name: prevProfile.name || currentFirebaseUser.displayName || '',
+        }));
+
+        // Attempt to load profile from Firestore
+        try {
+          const userDocRef = doc(db, 'users', currentFirebaseUser.uid);
+          const docSnap = await getDoc(userDocRef);
+
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            if (userData.profile) {
+              const firestoreProfile = userData.profile;
+              // Firestore stores ProfilePhoto[] (without 'file' property)
+              // We need to ensure the objects are correctly typed as ProfilePhoto for the state
+              const photosFromFirestore: ProfilePhoto[] = (firestoreProfile.photos || []).map((photoFromFileStore: any) => ({
+                id: photoFromFileStore.id || uuidv4(), // Ensure ID exists
+                storageUrl: photoFromFileStore.storageUrl,
+                // Use storageUrl as previewUrl if previewUrl is missing or was a temporary blob
+                previewUrl: (photoFromFileStore.previewUrl && photoFromFileStore.previewUrl.startsWith('http')) ? photoFromFileStore.previewUrl : photoFromFileStore.storageUrl,
+                file: undefined, // No local file when loading from storage
+                uploadProgress: undefined,
+                error: undefined,
+              }));
+
+              setProfile(prev => ({ 
+                ...prev, 
+                ...firestoreProfile,
+                photos: photosFromFirestore, // Set the transformed photos
+                id: currentFirebaseUser.uid, // Ensure ID is from auth
+                lastActive: firestoreProfile.lastActive?.seconds ? new Date(firestoreProfile.lastActive.seconds * 1000) : new Date()
+              }));
+            }
+            if (userData.additionalInfo) {
+              setAdditionalInfo(userData.additionalInfo);
+            }
+            console.log('User profile loaded from Firestore.');
+          } else {
+            // New user or no profile in Firestore, set defaults
+            console.log('No profile found in Firestore for this user. Using defaults.');
+            // Profile ID and name are already partially set above
+            // Other defaults for profile and additionalInfo will remain as per initialState
+          }
+        } catch (error) {
+          console.error('Error fetching user profile from Firestore:', error);
+          setAuthError('Failed to load profile data.');
+          // Fallback to default empty profile if Firestore fails
+          setProfile({
+            id: currentFirebaseUser.uid,
+            name: currentFirebaseUser.displayName || '',
+            age: 25,
+            gender: 'male',
+            bio: '',
+            interests: [],
+            photos: [] as ProfilePhoto[], // Initial state for photos is an empty array of ProfilePhoto
+            location: { city: '', state: '' },
+            preferences: { minAge: 18, maxAge: 45, gender: [] },
+            lastActive: new Date(),
+          });
+          setAdditionalInfo({
+            height: '', weight: '', sexuality: '', maritalStatus: '', bodyType: '',
+            skinColor: '', ethnicity: '', education: '', job: '', jobTitle: '',
+            religion: '', interestsDescription: '', languagesLearning: '', dreams: '',
+            degree: '', diet: '', sleepSchedule: '', fitnessLevel: '', workLifeBalance: '',
+            livingSituation: '', travelPreference: '', familyRelationship: '',
+            financialSituation: '', socialLife: '', drinking: 'sometimes', smoking: 'no',
+            languages: [], lookingFor: []
+          });
+        }
+
+        // Sync auth data to your own backend (if still needed)
+        try {
+          const userDataToSync = {
+            email: currentFirebaseUser.email,
+            displayName: currentFirebaseUser.displayName,
+            photoURL: currentFirebaseUser.photoURL,
+            createdAt: currentFirebaseUser.metadata.creationTime,
+            lastLogin: currentFirebaseUser.metadata.lastSignInTime,
+          };
+          // console.log('Syncing user data to backend:', userDataToSync); // Optional: keep if useful
+          // await axios.post(`/api/profile/${currentFirebaseUser.uid}/sync-auth`, userDataToSync); // Commented out to prevent 404 if backend endpoint is not ready
+        } catch (syncError: any) {
+          console.error("Error syncing user data to backend:", syncError);
+          // This error is secondary to profile loading, so might not set authError globally
+        }
+
+      } else {
+        // User is signed out
+        setProfile({
+          id: uuidv4(), name: '', age: 25, gender: 'male', bio: '', interests: [], photos: [],
+          location: { city: '', state: '' }, preferences: { minAge: 18, maxAge: 45, gender: [] }, lastActive: new Date()
+        });
+        setAdditionalInfo({
+            height: '', weight: '', sexuality: '', maritalStatus: '', bodyType: '',
+            skinColor: '', ethnicity: '', education: '', job: '', jobTitle: '',
+            religion: '', interestsDescription: '', languagesLearning: '', dreams: '',
+            degree: '', diet: '', sleepSchedule: '', fitnessLevel: '', workLifeBalance: '',
+            livingSituation: '', travelPreference: '', familyRelationship: '',
+            financialSituation: '', socialLife: '', drinking: 'sometimes', smoking: 'no',
+            languages: [], lookingFor: []
+        });
+        setAuthError(null);
+      }
+      console.log('[Auth] onAuthStateChanged: Final check before setAuthLoading(false). currentFirebaseUser:', currentFirebaseUser);
+      setAuthLoading(false);
+    }); // End of onAuthStateChanged callback
+
+    return () => unsubscribe(); // Cleanup function for useEffect
+  }, []); // Empty dependency array to run only once on mount
+
+  // The handleGoogleSignIn function that used Firebase signInWithPopup has been removed.
+  // Google Sign-In is now managed by AuthContext.
+
+  // Cascade: Conditional rendering logic for auth state will be prepended to the main return.
+  // The original 'Profile state' and subsequent form logic will only render if firebaseUser is authenticated.
   // Profile state
   const [profile, setProfile] = useState<User>({
     id: uuidv4(),
@@ -314,30 +485,8 @@ export default function ProfileCreation(props: ProfileCreationProps) {
     setProfileCompletion(percentage);
   }, [profile, additionalInfo]);
   
-  // Load saved profile data from localStorage
-  useEffect(() => {
-    const savedProfile = localStorage.getItem('userProfile');
-    const savedAdditionalInfo = localStorage.getItem('userAdditionalInfo');
-    
-    if (savedProfile) {
-      try {
-        const parsedProfile = JSON.parse(savedProfile);
-        // Ensure lastActive is a Date object
-        parsedProfile.lastActive = new Date(parsedProfile.lastActive);
-        setProfile(parsedProfile);
-      } catch (error) {
-        console.error('Error parsing saved profile:', error);
-      }
-    }
-    
-    if (savedAdditionalInfo) {
-      try {
-        setAdditionalInfo(JSON.parse(savedAdditionalInfo));
-      } catch (error) {
-        console.error('Error parsing saved additional info:', error);
-      }
-    }
-  }, []);
+  // The useEffect hook for loading data from localStorage has been removed.
+  // Data is now loaded from Firestore within the onAuthStateChanged listener.
   
   // Update bio character count
   useEffect(() => {
@@ -475,47 +624,63 @@ export default function ProfileCreation(props: ProfileCreationProps) {
   const processPhoto = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const photoUrl = event.target?.result as string;
-        const newPhotos = [...(profile.photos || [])];
-        
-        // If it's profile photo (index 0), make sure it's the first in the array
-        if (index === 0) {
-          newPhotos[0] = photoUrl;
+      const newPhotoId = uuidv4();
+      const objectUrl = URL.createObjectURL(file);
+      const newPhotoEntry: ProfilePhoto = {
+        id: newPhotoId,
+        file: file,
+        previewUrl: objectUrl,
+        storageUrl: undefined // New file, no storage URL yet
+      };
+
+      setProfile(prev => {
+        const currentPhotos = prev.photos ? [...prev.photos] : [];
+        // Revoke old object URL if replacing an image that was a blob
+        const photoBeingReplaced = currentPhotos[index];
+        if (index < currentPhotos.length && photoBeingReplaced && typeof photoBeingReplaced.previewUrl === 'string' && photoBeingReplaced.previewUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(photoBeingReplaced.previewUrl);
+        }
+
+        if (index < currentPhotos.length) {
+          currentPhotos[index] = newPhotoEntry;
         } else {
-          // For additional photos, find next empty slot or replace at index
-          if (index < newPhotos.length) {
-            newPhotos[index] = photoUrl;
+          // Ensure we don't exceed a max number of photos if applicable (e.g., 7 based on fileInputRefs)
+          if (currentPhotos.length < 7) { 
+            currentPhotos.push(newPhotoEntry);
           } else {
-            newPhotos.push(photoUrl);
+            // Optionally, replace the last one or show an error
+            currentPhotos[index % 7] = newPhotoEntry; // Example: replace if trying to add beyond limit
+            console.warn('Maximum photo limit reached. Replacing an existing photo slot.');
+            URL.revokeObjectURL(objectUrl); // Revoke if not actually used due to limit
+            return prev; // Or handle error appropriately
           }
         }
-        
-        setProfile(prev => ({
+        return {
           ...prev,
-          photos: newPhotos
-        }));
-      };
-      
-      reader.readAsDataURL(file);
+          photos: currentPhotos
+        };
+      });
     }
   };
   
   // Remove photo
   const removePhoto = (index: number) => {
     setProfile(prev => {
-      const newPhotos = [...(prev.photos || [])];
-      newPhotos.splice(index, 1);
+      const currentPhotos = prev.photos ? [...prev.photos] : [];
+      if (index < 0 || index >= currentPhotos.length) return prev; // Invalid index
+
+      const photoToRemove = currentPhotos[index];
       
-      // If removing profile photo, shift everything
-      if (index === 0 && newPhotos.length > 0) {
-        // First additional photo becomes new profile photo
+      // Revoke object URL if it's a blob URL
+      if (photoToRemove && typeof photoToRemove.previewUrl === 'string' && photoToRemove.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(photoToRemove.previewUrl);
       }
+
+      const updatedPhotos = currentPhotos.filter((_, i) => i !== index);
       
       return {
         ...prev,
-        photos: newPhotos
+        photos: updatedPhotos
       };
     });
   };
@@ -523,16 +688,25 @@ export default function ProfileCreation(props: ProfileCreationProps) {
   // Initialize from existing profile if in edit mode
   useEffect(() => {
     if (props.existingProfile && props.existingAdditionalInfo) {
-      setProfile(props.existingProfile);
+      // Ensure photos from props are correctly formatted for component state
+      const photosFromProps: ProfilePhoto[] = (props.existingProfile.photos || []).map((photoFromProp: ProfilePhoto) => ({
+        id: photoFromProp.id || uuidv4(), // Ensure ID exists
+        storageUrl: photoFromProp.storageUrl,
+        // Use storageUrl as previewUrl if previewUrl is missing or was a temporary blob
+        previewUrl: (photoFromProp.previewUrl && photoFromProp.previewUrl.startsWith('http')) 
+                      ? photoFromProp.previewUrl 
+                      : photoFromProp.storageUrl,
+        file: undefined, // No local file when loading from props
+        uploadProgress: photoFromProp.uploadProgress, // Preserve if present
+        error: photoFromProp.error, // Preserve if present
+      }));
+      setProfile({...props.existingProfile, photos: photosFromProps });
       setAdditionalInfo(props.existingAdditionalInfo);
     }
   }, [props.existingProfile, props.existingAdditionalInfo]);
 
-  // Convert a base64 image to a Blob for upload
-  const base64ToBlob = async (base64String: string): Promise<Blob> => {
-    const response = await fetch(base64String);
-    return await response.blob();
-  };
+// The ProfilePhoto type from '../../types/user' will be used for photo entries.
+// The base64ToBlob function is no longer needed with Firebase direct file uploads.
 
   // Save profile data
   // Validate the profile data before submission
@@ -567,130 +741,169 @@ export default function ProfileCreation(props: ProfileCreationProps) {
     return errors;
   };
 
-  // Upload profile photos to the server
-  const uploadPhotos = async () => {
-    const uploadedPhotoUrls: string[] = [];
+// Utility to remove undefined properties from an object, recursively
+const cleanObjectForFirestore = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object' || obj instanceof Date) { // Base cases: primitives, null, Date instances
+    return obj;
+  }
 
-    if (profile.photos && profile.photos.length > 0) {
-      for (const photoData of profile.photos) {
-        if (photoData) {
-          try {
-            // Create a form data object for the photo upload
-            const formData = new FormData();
-            
-            // Convert base64 to blob if necessary
-            let photoBlob;
-            if (photoData.startsWith('data:')) {
-              // It's a base64 string, convert to blob
-              photoBlob = await base64ToBlob(photoData);
-            } else if (typeof photoData === 'string' && !photoData.startsWith('http')) {
-              // It's a local photo, retrieve from sessionStorage
-              const storedPhoto = sessionStorage.getItem(photoData);
-              if (storedPhoto) {
-                photoBlob = await base64ToBlob(storedPhoto);
-              }
-            }
+  if (Array.isArray(obj)) {
+    // Recursively clean items and then filter out any undefined values from the array
+    return obj.map(item => cleanObjectForFirestore(item)).filter(item => item !== undefined);
+  }
 
-            // If we have a blob, append it to the form data
-            if (photoBlob) {
-              formData.append('photo', photoBlob, 'profile-photo.jpg');
-              
-              // Send the photo to the server
-              const response = await fetch('/api/profile/upload-photo', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: formData
-              });
-
-              if (response.ok) {
-                const result = await response.json();
-                uploadedPhotoUrls.push(result.photoUrl);
-              } else {
-                console.error('Failed to upload photo:', await response.text());
-              }
-            } else if (photoData.startsWith('http')) {
-              // It's already a URL, just add it to the list
-              uploadedPhotoUrls.push(photoData);
-            }
-          } catch (err) {
-            console.error('Error uploading photo:', err);
-          }
-        }
+  // Handle objects
+  const cleaned: { [key: string]: any } = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const value = obj[key];
+      if (value !== undefined) {
+        cleaned[key] = cleanObjectForFirestore(value); // Recurse for nested objects/arrays
       }
     }
+  }
+  return cleaned;
+};
 
-    return uploadedPhotoUrls;
+  // Upload photos to Firebase Storage and get their updated ProfilePhoto objects
+  const uploadAndGetPhotoUrls = async (photos: ProfilePhoto[], userId: string): Promise<ProfilePhoto[]> => {
+    if (!storage || !userId) {
+      console.error('Firebase Storage or User ID is not available for photo upload.');
+      // Return only photos that already have a storageUrl, marking others as failed implicitly
+      return photos.filter(p => p.storageUrl);
+    }
+
+    const uploadPromises = photos.map(async (photoEntry) => {
+      if (photoEntry.file) {
+        const photoIdToUse = photoEntry.id || uuidv4(); // Ensure ID exists
+        const fileName = photoEntry.file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const photoStorageRef = ref(storage, `users/${userId}/photos/${photoIdToUse}-${fileName}`);
+        try {
+          console.log(`Uploading ${fileName} to ${photoStorageRef.fullPath}...`);
+          const snapshot = await uploadBytesResumable(photoStorageRef, photoEntry.file);
+          const downloadURL = await getDownloadURL(snapshot.ref);
+          return {
+            ...photoEntry,
+            storageUrl: downloadURL,
+            previewUrl: downloadURL, // Update preview to the persistent URL
+            file: undefined, // Clear the file object after upload
+            error: undefined, // Clear any previous error
+            uploadProgress: undefined // Clear progress
+          };
+        } catch (error: any) {
+          console.error(`Error uploading photo ${photoEntry.file.name}:`, error);
+          // If upload fails, keep existing storageUrl if present, otherwise mark error
+          return {
+            ...photoEntry,
+            file: undefined, // Clear file even on failure to prevent re-upload attempts of same failed file
+            error: error.message || 'Upload failed',
+            // Keep existing storageUrl if this was an attempt to replace an existing photo
+          };
+        }
+      } else if (photoEntry.storageUrl) {
+        // This photo is already uploaded and not changed, ensure no file object lingers
+        return { ...photoEntry, file: undefined, error: undefined, uploadProgress: undefined };
+      }
+      // If no file and no storageUrl, it's an invalid state or an empty slot, filter out later
+      return null;
+    });
+
+    const results = await Promise.all(uploadPromises);
+    return results.filter(photo => photo !== null) as ProfilePhoto[];
   };
 
   const saveProfile = async () => {
+    console.log('[Auth] saveProfile: Attempting to save. firebaseUser:', firebaseUser, 'authLoading:', authLoading);
+
+    if (!firebaseUser) {
+      alert("You are not logged in. Please sign in with Google to save your profile.");
+      handleFirebaseGoogleSignIn(); // Initiate Firebase Google Sign-In
+      return; // Stop further execution, user will need to click save again after sign-in
+    }
+
+    // At this point, firebaseUser (from Firebase onAuthStateChanged) is available.
+    // Proceed with profile validation and saving.
+
+    const validationErrors = validateProfile();
+    if (validationErrors.length > 0) {
+      alert(`Please fix the following errors:\n\n${validationErrors.join('\n')}`);
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // First validate the profile data
-      const validationErrors = validateProfile();
-      if (validationErrors.length > 0) {
-        alert(`Please fix the following errors:\n\n${validationErrors.join('\n')}`);
-        return;
-      }
-
-      // Show a loading indicator
-      setIsLoading(true);
-
-      // Upload photos and get their URLs
-      const photoUrls = await uploadPhotos();
-
-      // Prepare the complete profile data to send to the server
-      const completeProfile = {
-        profile: {
-          ...profile,
-          photos: photoUrls,
-          // Add additional info to the profile object
-          ...additionalInfo,
-          // Update timestamp
-          lastActive: new Date().toISOString()
+      // 1. Get current photos from state, ensure they are ProfilePhoto objects
+      const photosToProcess: ProfilePhoto[] = (profile.photos || []).map(p => {
+        if (typeof p === 'string') { // Should not happen with proper state management
+          console.warn('Found string in profile.photos during save, converting:', p);
+          return { id: uuidv4(), previewUrl: p, storageUrl: p, file: undefined };
         }
-      };
-
-      // Also save locally as a backup
-      localStorage.setItem('userProfile', JSON.stringify(completeProfile.profile));
-      localStorage.setItem('userAdditionalInfo', JSON.stringify(additionalInfo));
-
-      // Send the profile data to the server
-      const response = await fetch('/api/profile/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(completeProfile)
+        return p;
       });
 
-      if (response.ok) {
-        // Hide loading indicator
-        setIsLoading(false);
-        
-        // Show success notification
-        alert('Profile saved successfully!');
-        
-        // Call the callback if provided
-        if (props.onProfileSaved) {
-          props.onProfileSaved();
-        }
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save profile');
+      // 2. Upload photos and get their updated states (with storageUrls, errors, etc.)
+      const uploadedPhotoObjects = await uploadAndGetPhotoUrls(photosToProcess, firebaseUser.uid);
+
+      // Update component state with results of uploads (e.g., new URLs, errors)
+      setProfile(prev => ({ ...prev, photos: uploadedPhotoObjects }));
+
+      // Filter out photos that failed to upload AND don't have an existing storageUrl
+      const successfullyProcessedPhotos = uploadedPhotoObjects.filter(p => p.storageUrl);
+      if (uploadedPhotoObjects.some(p => p.error && !p.storageUrl)) {
+        alert('Some photos could not be uploaded. Please try again or remove them.');
+        // Optionally, do not proceed with saving if critical photos failed
       }
-    } catch (error) {
-      // Hide loading indicator
+
+      // 3. Prepare photos for Firestore (clean objects, only essential fields)
+      const photosForFirestore = successfullyProcessedPhotos.map(p => ({
+        id: p.id,
+        storageUrl: p.storageUrl,
+        // Ensure previewUrl is a persistent URL, not a blob URL
+        previewUrl: (p.previewUrl && p.previewUrl.startsWith('http')) ? p.previewUrl : p.storageUrl,
+        // Omit: file, uploadProgress, error from the Firestore object
+      }));
+
+      // 4. Prepare the rest of the profile data
+      // Clean the profile and additionalInfo objects before spreading
+      const cleanedProfile = cleanObjectForFirestore(profile);
+      const cleanedAdditionalInfo = cleanObjectForFirestore(additionalInfo);
+
+      const profileDataForFirestore = {
+        ...cleanedProfile,
+        id: firebaseUser.uid, // Ensure UID from auth user
+        photos: photosForFirestore, // Use the cleaned and successfully uploaded/existing photos
+        lastActive: new Date(), // Firestore will convert to Timestamp
+      };
+
+      // Ensure additionalInfoToSave is also cleaned
+      const additionalInfoToSave = cleanedAdditionalInfo;
+
+      // 5. Save to Firestore
+      console.log('Data for Firestore - profile:', JSON.stringify(profileDataForFirestore, null, 2));
+      console.log('Data for Firestore - additionalInfo:', JSON.stringify(additionalInfoToSave, null, 2));
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, {
+        profile: profileDataForFirestore,
+        additionalInfo: additionalInfoToSave,
+        uid: firebaseUser.uid, // Also store uid at the top level for easier querying if needed
+        updatedAt: new Date(), // General timestamp for the record
+      }, { merge: true });
+
       setIsLoading(false);
-      
-      console.error('Error saving profile:', error);
-      alert(`There was an error saving your profile: ${error instanceof Error ? error.message : 'Unknown error'}.\n\nYour profile has been saved locally as a backup.`);
-      
-      // Still call the callback if provided (since we have local backup)
+      alert('Profile saved successfully to Firebase!');
+
+      localStorage.removeItem('userProfile');
+      localStorage.removeItem('userAdditionalInfo');
+
       if (props.onProfileSaved) {
         props.onProfileSaved();
       }
+
+    } catch (error) {
+      setIsLoading(false);
+      console.error('Error saving profile to Firebase:', error);
+      alert(`There was an error saving your profile to Firebase: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Decide if props.onProfileSaved should be called on error
     }
   };
 
@@ -742,7 +955,7 @@ export default function ProfileCreation(props: ProfileCreationProps) {
           {profile.photos?.[0] ? (
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
               <img 
-                src={profile.photos[0]} 
+                src={profile.photos[0]?.previewUrl || profile.photos[0]?.storageUrl} 
                 alt="Profile" 
                 className={styles.photoPreview} 
               />
@@ -1396,7 +1609,7 @@ export default function ProfileCreation(props: ProfileCreationProps) {
                 {profile.photos?.[photoIndex] ? (
                   <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                     <img 
-                      src={profile.photos[photoIndex]} 
+                      src={profile.photos[photoIndex]?.previewUrl || profile.photos[photoIndex]?.storageUrl} 
                       alt={`Photo ${photoIndex}`} 
                       className={styles.photoPreview} 
                     />
@@ -1435,7 +1648,7 @@ export default function ProfileCreation(props: ProfileCreationProps) {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <button 
           className={styles.saveBtn}
-          disabled={profileCompletion < 60 || isLoading}
+          disabled={authLoading || profileCompletion < 80 || isLoading}
           onClick={saveProfile}
         >
           {isLoading ? 'Saving...' : (props.isEditing ? 'Update Profile' : 'Save Profile')}

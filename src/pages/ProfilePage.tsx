@@ -14,13 +14,15 @@ const ProfilePage: React.FC = () => {
 
   // Function to load profile data - first try the backend, then fall back to localStorage
   const loadProfileData = async () => {
+    console.log('[ProfilePage] loadProfileData: Called');
     setIsLoading(true);
     
     try {
       // Try to fetch profile from backend first (if user is authenticated)
       const token = localStorage.getItem('token');
-      
+      console.log('[ProfilePage] loadProfileData: Token value -', token);
       if (token) {
+        console.log('[ProfilePage] loadProfileData: Token found, attempting API fetch.');
         try {
           // Make API call to get profile data
           const response = await fetch('http://localhost:5001/api/profile', {
@@ -31,28 +33,33 @@ const ProfilePage: React.FC = () => {
           });
           
           if (response.ok) {
+            console.log('[ProfilePage] loadProfileData: API response OK.');
             const data = await response.json();
             if (data.profile) {
+              console.log('[ProfilePage] loadProfileData: Profile data found in API response:', JSON.stringify(data.profile));
               setUserProfile(data.profile);
               if (data.additionalInfo) {
                 setAdditionalInfo(data.additionalInfo);
               }
               setHasProfile(true);
               setIsLoading(false);
+              console.log('[ProfilePage] loadProfileData: State after API success - userProfile:', JSON.stringify(userProfile), 'hasProfile:', hasProfile, 'isLoading:', isLoading);
               return; // Successfully loaded from API
             }
           }
         } catch (error) {
-          console.error('Error fetching profile from API:', error);
+          console.error('[ProfilePage] loadProfileData: Error fetching profile from API:', error);
           // Continue to localStorage fallback
         }
       }
       
       // Fallback to localStorage if API fetch failed or user is not authenticated
+      console.log('[ProfilePage] loadProfileData: Falling back to localStorage.');
       const savedProfile = localStorage.getItem('userProfile');
       const savedAdditionalInfo = localStorage.getItem('userAdditionalInfo');
       
       if (savedProfile) {
+        console.log('[ProfilePage] loadProfileData: Found profile in localStorage:', savedProfile);
         try {
           const profile = JSON.parse(savedProfile);
           
@@ -71,23 +78,27 @@ const ProfilePage: React.FC = () => {
           
           // Check if profile has essential info
           if (profile.name && profile.age) {
+            console.log('[ProfilePage] loadProfileData: Profile from localStorage has essential info.');
             setHasProfile(true);
           }
         } catch (error) {
-          console.error('Error parsing saved profile:', error);
+          console.error('[ProfilePage] loadProfileData: Error parsing saved profile from localStorage:', error);
         }
       }
       
       if (savedAdditionalInfo) {
+        console.log('[ProfilePage] loadProfileData: Found additionalInfo in localStorage:', savedAdditionalInfo);
         try {
           const additionalData = JSON.parse(savedAdditionalInfo);
           setAdditionalInfo(additionalData);
         } catch (error) {
-          console.error('Error parsing additional info:', error);
+          console.error('[ProfilePage] loadProfileData: Error parsing additional info from localStorage:', error);
         }
       }
     } finally {
+      console.log('[ProfilePage] loadProfileData: Finally block. Current state BEFORE setIsLoading(false) - userProfile:', JSON.stringify(userProfile), 'hasProfile:', hasProfile, 'isLoading:', isLoading);
       setIsLoading(false);
+      console.log('[ProfilePage] loadProfileData: Finally block. Current state AFTER setIsLoading(false) - userProfile:', JSON.stringify(userProfile), 'hasProfile:', hasProfile, 'isLoading:', isLoading);
     }
   };
 
@@ -138,13 +149,16 @@ const ProfilePage: React.FC = () => {
 
   // Render the profile content based on state
   const renderProfileContent = () => {
+    console.log(`[ProfilePage] renderProfileContent: Called. State: isLoading=${isLoading}, hasProfile=${hasProfile}, isEditing=${isEditing}, userProfile=${JSON.stringify(userProfile)}`);
     // Loading state
     if (isLoading) {
+      console.log('[ProfilePage] renderProfileContent: Rendering loading screen (isLoading is true).');
       return <div className={styles.loading}>Loading profile...</div>;
     }
     
     // New profile creation
     if (!hasProfile && !isEditing) {
+      console.log('[ProfilePage] renderProfileContent: Condition met for NEW profile creation.');
       return (
         <ProfileCreation
           onProfileSaved={handleProfileSaved}
@@ -154,18 +168,20 @@ const ProfilePage: React.FC = () => {
     
     // Editing existing profile
     if (isEditing) {
+      console.log('[ProfilePage] renderProfileContent: Condition met for EDITING existing profile.');
       return (
         <ProfileCreation
           existingProfile={userProfile!}
           existingAdditionalInfo={additionalInfo}
           onProfileSaved={handleProfileSaved}
-          isEditing={true}
+          isEditingProp={true}
         />
       );
     }
     
     // View mode (has profile, not editing)
-    if (userProfile && additionalInfo) {
+    if (userProfile && additionalInfo) { // This condition is for VIEWING, not creating/editing
+      console.log('[ProfilePage] renderProfileContent: Condition met for VIEWING profile.');
       return (
         <ProfileView 
           profile={userProfile}
@@ -176,6 +192,7 @@ const ProfilePage: React.FC = () => {
     }
     
     // Loading state or fallback
+    console.log('[ProfilePage] renderProfileContent: No specific condition met, rendering fallback loading screen.');
     return <div className={styles.loading}>Loading profile...</div>;
   };
 

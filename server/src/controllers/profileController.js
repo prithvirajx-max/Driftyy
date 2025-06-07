@@ -70,6 +70,47 @@ export const getProfile = async (req, res) => {
   }
 };
 
+
+// Create or update user profile in Firestore from auth data
+export const syncUserProfileFromAuth = async (req, res) => {
+  try {
+    const userId = req.params.userId; // UID from Firebase Auth, sent by client
+    const { email, displayName, photoURL, createdAt, lastLogin } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required.' });
+    }
+    if (!email) { // Email is usually a good minimum requirement
+        return res.status(400).json({ success: false, message: 'Email is required.' });
+    }
+
+    const userDocRef = db.collection('users').doc(userId);
+
+    const userData = {
+      uid: userId,
+      email: email,
+      displayName: displayName || null,
+      photoURL: photoURL || null,
+      // Ensure createdAt and lastLogin are valid ISO strings or convert them
+      createdAt: createdAt ? new Date(createdAt).toISOString() : null,
+      lastLogin: lastLogin ? new Date(lastLogin).toISOString() : null,
+      profileLastSyncedAt: new Date().toISOString(), // Server-side timestamp for this sync operation
+    };
+
+    // Using set with merge:true ensures we don't overwrite other parts of the profile
+    await userDocRef.set(userData, { merge: true });
+
+    res.status(200).json({
+      success: true,
+      message: 'User profile synced successfully from auth data.',
+      user: { uid: userId, ...userData } // Return the synced data
+    });
+  } catch (error) {
+    console.error('Error syncing user profile from auth:', error);
+    res.status(500).json({ success: false, message: 'Failed to sync user profile.', error: error.message });
+  }
+};
+
 // Update user profile in Firestore
 export const updateProfile = async (req, res) => {
   try {
