@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { createOrUpdateUserProfile } from '../services/userService'; // Import the service
 import { useGoogleLogin, googleLogout, TokenResponse } from '@react-oauth/google';
 
 interface AuthContextType {
@@ -9,10 +10,11 @@ interface AuthContextType {
 }
 
 interface GoogleUser {
+  id: string; // To store Google's unique 'sub'
   name: string;
   email: string;
   picture: string;
-  token: string;
+  token: string; // This is the access_token
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,10 +46,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!res.ok) throw new Error('Failed to fetch Google profile');
       const profile = await res.json();
       const googleUser: GoogleUser = {
+        id: profile.sub, // STORE THE 'sub' CLAIM
         name: profile.name,
         email: profile.email,
         picture: profile.picture,
-        token
+        token // access_token
       };
       return googleUser;
     } catch (err) {
@@ -62,6 +65,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (googleUser) {
         setUser(googleUser);
         localStorage.setItem('googleUser', JSON.stringify(googleUser));
+        // Ensure profile exists in Firestore
+        try {
+          const firestoreProfile = await createOrUpdateUserProfile(googleUser);
+          console.log('Firestore profile ensured/updated:', firestoreProfile);
+          // Optionally, you could merge firestoreProfile details back into the local 'user' state
+          // if it contains more/updated info (e.g., a custom username set previously)
+          // For now, the local 'user' state primarily reflects Google's direct info + token.
+        } catch (error) {
+          console.error('Error ensuring/updating Firestore profile:', error);
+        }
       }
     },
     onError: (error) => {

@@ -1,11 +1,17 @@
-// Firebase config removed. This file is no longer needed.
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDrifty5DatingApp2023KeyXYZ",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "drifty-dating-app.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "drifty-dating-app",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "drifty-dating-app.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "123456789012",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:123456789012:web:abc123def456789",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-MEASUREMENT_ID"
+import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+// Your Firebase configuration (from your project settings)
+const firebaseConfig = {
+  apiKey: "AIzaSyC6JqftUrkqafSpvI4iZ0GDTKrAtjnedws",
+  authDomain: "driftyy-c8fe9.firebaseapp.com",
+  projectId: "driftyy-c8fe9",
+  storageBucket: "driftyy-c8fe9.firebasestorage.app",
+  messagingSenderId: "691501262337",
+  appId: "1:691501262337:web:a9b50724ef83590b174200",
+  measurementId: "G-4K157NSSE5" // Optional for Firebase JS SDK v7.20.0 and later
 };
 
 // Initialize Firebase
@@ -14,13 +20,14 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-// Initialize Auth Providers
+// Initialize Auth Providers (optional, if you plan to use them)
+// Make sure you have enabled these sign-in methods in your Firebase console
 const googleProvider = new GoogleAuthProvider();
 const facebookProvider = new FacebookAuthProvider();
 
-// Configure providers
+// Example: Configure Google provider to always prompt for account selection
 googleProvider.setCustomParameters({
   prompt: 'select_account'
 });
 
-export { auth, db, storage, googleProvider, facebookProvider };
+export { app, auth, db, storage, googleProvider, facebookProvider };
