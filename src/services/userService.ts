@@ -1,16 +1,67 @@
 import { db } from '../config/firebase'; // Your Firebase config
 import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
-export interface UserProfile {
-  uid: string;
-  email: string; // From Google profile
-  name: string; // From Google profile, user can update
-  username?: string; // User-defined, should be unique
+export interface UserProfileLocation {
+  city?: string;
+  state?: string;
+}
+
+export interface UserProfilePreferences {
+  minAge?: number;
+  maxAge?: number;
+  gender?: string[]; // Optional array of strings
+}
+
+export interface UserProfileData {
   bio?: string;
-  profilePictureUrl?: string;
-  website?: string;
+  age?: number;
+  gender?: string;
+  location?: UserProfileLocation;
+  interests?: string[];
+  photos?: string[]; // Array of photo URLs from Firebase Storage
+  preferences?: UserProfilePreferences;
+  height?: string;
+  weight?: string;
+  sexuality?: string;
+  maritalStatus?: string;
+  bodyType?: string;
+  skinColor?: string;
+  ethnicity?: string;
+  education?: string;
+  job?: string;
+  jobTitle?: string;
+  religion?: string;
+  interestsDescription?: string;
+  languagesLearning?: string;
+  dreams?: string;
+  degree?: string;
+  diet?: string;
+  sleepSchedule?: string;
+  fitnessLevel?: string;
+  workLifeBalance?: string;
+  livingSituation?: string;
+  travelPreference?: string;
+  familyRelationship?: string;
+  financialSituation?: string;
+  socialLife?: string;
+  drinking?: string;
+  smoking?: string;
+  languages?: string[];
+  lookingFor?: string[];
+}
+
+export interface UserProfile {
+  uid: string; // Google User ID (sub claim)
+  email: string; // From Google profile, can be primary contact
+  displayName: string; // From Google profile, user can update this as their main display name
+  username?: string; // Optional user-defined unique username
+  photoURL?: string; // Main profile picture URL (from Firebase Storage)
+  phoneNumber?: string; // Optional phone number
+  profile?: UserProfileData; // Contains all detailed profile information
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  // Add any other top-level fields that are stored directly in the Firestore user document
+  // For example, if fcmTokens or role are managed here from frontend directly
 }
 
 const USER_COLLECTION = 'users';
@@ -55,30 +106,39 @@ export const createOrUpdateUserProfile = async (
   if (docSnap.exists()) {
     // Profile exists, update basic info if necessary (name, email from Google)
     const existingData = docSnap.data() as UserProfile;
+    // Profile exists, update basic info if necessary (displayName, email from Google)
+    // Keep existing detailed profile, only update top-level fields from Google if they've changed
     const updatedData: Partial<UserProfile> = {
-      name: googleUser.name || existingData.name || '',
+      displayName: googleUser.name || existingData.displayName || '',
       email: googleUser.email || existingData.email || '',
-      // Preserve existing username and bio unless explicitly changed elsewhere
-      // profilePictureUrl will be updated if Google's picture is newer or not set
-      profilePictureUrl: googleUser.picture && (!existingData.profilePictureUrl || existingData.profilePictureUrl !== googleUser.picture) 
-                         ? googleUser.picture 
-                         : existingData.profilePictureUrl,
+      photoURL: googleUser.picture && (!existingData.photoURL || existingData.photoURL !== googleUser.picture) 
+                       ? googleUser.picture 
+                       : existingData.photoURL,
       updatedAt: serverTimestamp() as Timestamp,
     };
+    // Ensure 'profile' field exists if it doesn't, to avoid issues with partial updates to nested fields later
+    if (!existingData.profile) {
+      updatedData.profile = {}; // Initialize with an empty profile object if it's missing
+    }
     await setDoc(userDocRef, updatedData, { merge: true });
     const updatedSnap = await getDoc(userDocRef);
     return updatedSnap.data() as UserProfile;
 
   } else {
     // Profile doesn't exist, create a new one
+    // Profile doesn't exist, create a new one with basic info and an empty profile object
     userProfileData = {
       uid: googleUser.id,
       email: googleUser.email || '',
-      name: googleUser.name || '',
+      displayName: googleUser.name || '',
       username: '', // User can set this later
-      bio: '',
-      profilePictureUrl: googleUser.picture || '', // Use Google picture if available
-      website: '',
+      photoURL: googleUser.picture || '', // Use Google picture if available
+      profile: { // Initialize with an empty profile structure
+        preferences: {
+          gender: [] // Initialize gender preference as an empty array (optional)
+        },
+        photos: [] // Initialize photos array
+      },
       createdAt: serverTimestamp() as Timestamp,
       updatedAt: serverTimestamp() as Timestamp,
     };
@@ -91,7 +151,9 @@ export const createOrUpdateUserProfile = async (
 /**
  * Updates specific fields of a user's profile.
  */
-export const updateUserProfile = async (userId: string, dataToUpdate: Partial<Omit<UserProfile, 'uid' | 'email' | 'createdAt'>>) => {
+// dataToUpdate can be a flat object with top-level fields like 'displayName', 'username'
+// or it can include a nested 'profile' object: { profile: { bio: 'new bio', age: 30 } }
+export const updateUserProfile = async (userId: string, dataToUpdate: Partial<Omit<UserProfile, 'uid' | 'createdAt'>>) => {
   if (!userId) throw new Error("User ID is required to update profile.");
 
   const userDocRef = doc(db, USER_COLLECTION, userId);

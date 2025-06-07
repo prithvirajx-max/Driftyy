@@ -559,9 +559,9 @@ export default function ProfileCreation(props: ProfileCreationProps) {
     }
 
     // Validate preferences
-    if (!profile.preferences?.gender || profile.preferences.gender.length === 0) {
-      errors.push('Please select at least one gender preference');
-    }
+    // if (!profile.preferences?.gender || profile.preferences.gender.length === 0) {
+    //   errors.push('Please select at least one gender preference');
+    // }
 
     // Return errors if any
     return errors;
