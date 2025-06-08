@@ -82,7 +82,6 @@ const ProfileCreation = () => {
   const [recording, setRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Available options
   const genderOptions = ['Male', 'Female', 'Non-binary', 'Custom'];
@@ -325,17 +324,13 @@ const ProfileCreation = () => {
                     </>
                   ) : (
                     <label
+                      htmlFor={`photo-upload-${index}`}
                       className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => fileInputRefs.current[index]?.click()}
                     >
                       <input
                         type="file"
                         accept="image/*"
-                        ref={el => {
-                          if (fileInputRefs.current) {
-                            fileInputRefs.current[index] = el;
-                          }
-                        }}
+                        id={`photo-upload-${index}`}
                         className="sr-only"
                         onChange={(e) => {
                           if (e.target.files && e.target.files.length > 0) {
