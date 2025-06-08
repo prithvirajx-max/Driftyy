@@ -2,14 +2,45 @@ import { useState, useRef } from 'react';
 import {
   Camera, Mic, ChevronRight, ChevronLeft, Save,
   User, Calendar, Heart, Globe, Briefcase, GraduationCap,
-  Utensils, Wine, Smoking, TrendingUp, Flag, Music, Film,
+  Utensils, Wine, /* Smoking, */ TrendingUp, Flag, Music, Film,
   Languages, PawPrint, Sparkles, X
 } from 'lucide-react';
+
+interface ProfileState {
+    name: string;
+    age: string;
+    gender: string;
+    pronouns: string;
+    orientation: string[];
+    location: string;
+    profession: string;
+    education: string;
+    voiceNote: string | null;
+    about: string;
+    prompts: { question: string; answer: string }[];
+    relationshipGoals: string;
+    height: string;
+    bodyType: string;
+    exercise: string;
+    diet: string;
+    smokes: string;
+    drinks: string;
+    greenFlags: string[];
+    redFlags: string[];
+    artists: string[];
+    shows: string[];
+    languages: string[];
+    pets: string;
+    religion: string;
+    zodiac: string;
+    photos: (string | null)[];
+    instagram: string;
+  }
 
 const ProfileCreation = () => {
   // Form state
   const [step, setStep] = useState(1);
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<ProfileState>({
     // Section 1: Basics
     name: '',
     age: '',
@@ -19,7 +50,7 @@ const ProfileCreation = () => {
     location: '',
     profession: '',
     education: '',
-    voiceNote: null,
+    voiceNote: null as string | null,
     about: '',
     prompts: Array(3).fill({ question: '', answer: '' }),
     
@@ -43,14 +74,14 @@ const ProfileCreation = () => {
     zodiac: '',
     
     // Section 4: Media
-    photos: Array(6).fill(null),
+    photos: Array(6).fill(null) as (string | null)[],
     instagram: ''
   });
 
   // Voice recording
   const [recording, setRecording] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Available options
   const genderOptions = ['Male', 'Female', 'Non-binary', 'Custom'];
@@ -82,7 +113,10 @@ const ProfileCreation = () => {
   ];
 
   // Handlers
-  const handlePhotoUpload = (index, file) => {
+  const handlePhotoUpload = (index: number, file: File | undefined | null) => {
+    if (!file) {
+      return; // No file selected or dialog cancelled
+    }
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file');
       return;
@@ -92,7 +126,7 @@ const ProfileCreation = () => {
     reader.onload = () => {
       setProfile(prev => ({
         ...prev,
-        photos: prev.photos.map((p, i) => i === index ? reader.result : p)
+        photos: prev.photos.map((p, i) => i === index ? reader.result as string : p)
       }));
     };
     reader.readAsDataURL(file);
@@ -102,7 +136,7 @@ const ProfileCreation = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = (e) => {
+      mediaRecorderRef.current.ondataavailable = (e: BlobEvent) => {
         audioChunksRef.current.push(e.data);
       };
       mediaRecorderRef.current.onstop = () => {
@@ -293,8 +327,12 @@ const ProfileCreation = () => {
                       <input
                         type="file"
                         accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handlePhotoUpload(index, e.target.files[0])}
+                        className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files.length > 0) {
+                            handlePhotoUpload(index, e.target.files[0]);
+                          }
+                        }}
                       />
                       <div className="flex flex-col items-center gap-2">
                         <Camera className="text-gray-400" size={24} />
