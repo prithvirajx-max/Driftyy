@@ -1,32 +1,23 @@
-import { initializeApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, enableIndexedDbPersistence, doc, setDoc, getDoc } from 'firebase/firestore';
-import { getStorage, Storage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+// Import correctly initialized instances from the main config file
+import { db, storage, app } from '../firebaseConfig';
 
-// TODO: Replace with your actual Firebase project configuration
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+// Import utility functions directly from Firebase SDKs
+import { doc, setDoc, getDoc, enableIndexedDbPersistence } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 
-// Initialize Firebase
-const app: FirebaseApp = initializeApp(firebaseConfig);
-const db: Firestore = getFirestore(app);
-const storage: Storage = getStorage(app);
-
-// Enable offline persistence
+// Enable offline persistence using the correctly initialized db
+// This should ideally be done once, where `db` is initialized.
+// We're keeping it here assuming this file acts as a configured service layer.
 enableIndexedDbPersistence(db)
   .catch((err) => {
     if (err.code === 'failed-precondition') {
-      console.warn('Firebase persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.');
+      console.warn('Firebase (from services/firebase.ts): Persistence failed (multiple tabs).');
     } else if (err.code === 'unimplemented') {
-      console.warn('Firebase persistence failed: The current browser does not support all of the features required to enable persistence.');
+      console.warn('Firebase (from services/firebase.ts): Persistence failed (browser unsupported).');
     } else {
-      console.error('Firebase persistence failed:', err);
+      console.error('Firebase (from services/firebase.ts): Persistence failed:', err);
     }
   });
 
+// Export everything that was previously exported, now ensuring db, storage, app are the correct instances
 export { db, storage, app, doc, setDoc, getDoc, ref, uploadBytes, getDownloadURL, deleteObject };
