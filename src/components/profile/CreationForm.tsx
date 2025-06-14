@@ -1539,7 +1539,7 @@ const cleanObjectForFirestore = (obj: any): any => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
         <button 
           className={styles.saveBtn}
-          disabled={authLoading || profileCompletion < 80 || isLoading}
+          disabled={isLoading || profileCompletion < 80 || isLoading}
           onClick={saveProfile}
         >
           {isLoading ? 'Saving...' : (props.isEditing ? 'Update Profile' : 'Save Profile')}
