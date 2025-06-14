@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import ProfileCreation from '../components/profile/CreationForm';
 import ProfileView from '../components/profile/ProfileView';
 import { User } from '../types/user';
@@ -11,6 +14,35 @@ const ProfilePage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [additionalInfo, setAdditionalInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Firebase user from AuthContext
+  const { firebaseUser } = useAuth();
+
+  // Load profile directly from Firestore whenever the authenticated user changes
+  useEffect(() => {
+    const fetchProfileFromFirestore = async () => {
+      if (!firebaseUser) return;
+      setIsLoading(true);
+      try {
+        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        if (userDoc.exists()) {
+          const data: any = userDoc.data();
+          const profileData = data.profile ? data.profile : data;
+          setUserProfile(profileData);
+          setAdditionalInfo(data.additionalInfo || {});
+          setHasProfile(true);
+        } else {
+          setHasProfile(false);
+        }
+      } catch (error) {
+        console.error('Error fetching profile from Firestore:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfileFromFirestore();
+  }, [firebaseUser]);
 
   // Function to load profile data - first try the backend, then fall back to localStorage
   const loadProfileData = async () => {
