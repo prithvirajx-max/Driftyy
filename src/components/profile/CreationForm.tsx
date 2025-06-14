@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../contexts/AuthContext'; // Import AuthContext hook
 import { motion } from 'framer-motion';
 import { FaPlus, FaCheck, FaTimes, FaCamera } from 'react-icons/fa';
 import styles from './ProfileCreation.module.css';
@@ -135,167 +136,55 @@ interface ProfileCreationProps {
   isEditing?: boolean;
 }
 
-// Firebase GoogleAuthProvider setup
+// Use AuthContext for authentication state
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export default function ProfileCreation(props: ProfileCreationProps) {
-  // Cascade: Adding auth state and logic
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [authError, setAuthError] = useState<string | null>(null);
+  // Use AuthContext for authentication state
+  const { user: googleUser, isAuthenticated, loginWithGoogle } = useAuth();
 
-
-  const handleFirebaseGoogleSignIn = async () => {
-    if (!auth) {
-      setAuthError("Firebase authentication service is not initialized.");
-      return;
-    }
-    setAuthError(null);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle setting firebaseUser and authLoading
-      alert("Sign-in successful! Please try saving your profile again.");
-    } catch (err: any) {
-      console.error("Google sign-in failed:", err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        setAuthError('Sign-in popup closed. Please try again.');
-      } else if (err.code === 'auth/cancelled-popup-request') {
-        setAuthError('Sign-in cancelled. Please try again.');
-      } else {
-        setAuthError(err.message || "An error occurred during Google sign-in.");
-      }
-    }
-  };
-
+  // Profile loading from Firestore should be triggered by googleUser changes (see below).
   useEffect(() => {
-    if (!auth) { // Check if Firebase auth was initialized
-      setAuthLoading(false);
-      setAuthError("Firebase authentication service is not initialized. Please check your Firebase configuration.");
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (currentFirebaseUser) => {
-      console.log('[Auth] onAuthStateChanged: firebaseUser:', currentFirebaseUser);
-      setFirebaseUser(currentFirebaseUser);
-      if (currentFirebaseUser) {
-        setProfile((prevProfile) => ({ // Set ID immediately
-          ...prevProfile,
-          id: currentFirebaseUser.uid,
-          name: prevProfile.name || currentFirebaseUser.displayName || '',
-        }));
-
-        // Attempt to load profile from Firestore
-        try {
-          const userDocRef = doc(db, 'users', currentFirebaseUser.uid);
-          const docSnap = await getDoc(userDocRef);
-
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            if (userData.profile) {
-              const firestoreProfile = userData.profile;
-              // Firestore stores ProfilePhoto[] (without 'file' property)
-              // We need to ensure the objects are correctly typed as ProfilePhoto for the state
-              const photosFromFirestore: ProfilePhoto[] = (firestoreProfile.photos || []).map((photoFromFileStore: any) => ({
-                id: photoFromFileStore.id || uuidv4(), // Ensure ID exists
-                storageUrl: photoFromFileStore.storageUrl,
-                // Use storageUrl as previewUrl if previewUrl is missing or was a temporary blob
-                previewUrl: (photoFromFileStore.previewUrl && photoFromFileStore.previewUrl.startsWith('http')) ? photoFromFileStore.previewUrl : photoFromFileStore.storageUrl,
-                file: undefined, // No local file when loading from storage
-                uploadProgress: undefined,
-                error: undefined,
-              }));
-
-              setProfile(prev => ({ 
-                ...prev, 
-                ...firestoreProfile,
-                photos: photosFromFirestore, // Set the transformed photos
-                id: currentFirebaseUser.uid, // Ensure ID is from auth
-                lastActive: firestoreProfile.lastActive?.seconds ? new Date(firestoreProfile.lastActive.seconds * 1000) : new Date()
-              }));
-            }
-            if (userData.additionalInfo) {
-              setAdditionalInfo(userData.additionalInfo);
-            }
-            console.log('User profile loaded from Firestore.');
-          } else {
-            // New user or no profile in Firestore, set defaults
-            console.log('No profile found in Firestore for this user. Using defaults.');
-            // Profile ID and name are already partially set above
-            // Other defaults for profile and additionalInfo will remain as per initialState
+    if (!googleUser) return;
+    const fetchProfile = async () => {
+      try {
+        const userDocRef = doc(db, 'users', googleUser.id);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const userData = docSnap.data();
+          if (userData.profile) {
+            const firestoreProfile = userData.profile;
+            const photosFromFirestore: ProfilePhoto[] = (firestoreProfile.photos || []).map((photoFromFileStore: any) => ({
+              id: photoFromFileStore.id || uuidv4(),
+              storageUrl: photoFromFileStore.storageUrl,
+              previewUrl: (photoFromFileStore.previewUrl && photoFromFileStore.previewUrl.startsWith('http')) ? photoFromFileStore.previewUrl : photoFromFileStore.storageUrl,
+              file: undefined,
+              uploadProgress: undefined,
+              error: undefined,
+            }));
+            setProfile(prev => ({
+              ...prev,
+              ...firestoreProfile,
+              photos: photosFromFirestore,
+              id: googleUser.id,
+              lastActive: firestoreProfile.lastActive?.seconds ? new Date(firestoreProfile.lastActive.seconds * 1000) : new Date()
+            }));
           }
-        } catch (error) {
-          console.error('Error fetching user profile from Firestore:', error);
-          setAuthError('Failed to load profile data.');
-          // Fallback to default empty profile if Firestore fails
-          setProfile({
-            id: currentFirebaseUser.uid,
-            name: currentFirebaseUser.displayName || '',
-            age: 25,
-            gender: 'male',
-            bio: '',
-            interests: [],
-            photos: [] as ProfilePhoto[], // Initial state for photos is an empty array of ProfilePhoto
-            location: { city: '', state: '' },
-            preferences: { minAge: 18, maxAge: 45, gender: [] },
-            lastActive: new Date(),
-          });
-          setAdditionalInfo({
-            height: '', weight: '', sexuality: '', maritalStatus: '', bodyType: '',
-            skinColor: '', ethnicity: '', education: '', job: '', jobTitle: '',
-            religion: '', interestsDescription: '', languagesLearning: '', dreams: '',
-            degree: '', diet: '', sleepSchedule: '', fitnessLevel: '', workLifeBalance: '',
-            livingSituation: '', travelPreference: '', familyRelationship: '',
-            financialSituation: '', socialLife: '', drinking: 'sometimes', smoking: 'no',
-            languages: [], lookingFor: []
-          });
+          if (userData.additionalInfo) {
+            setAdditionalInfo(userData.additionalInfo);
+          }
+          console.log('User profile loaded from Firestore.');
+        } else {
+          // No profile found, keep defaults
         }
-
-        // Sync auth data to your own backend (if still needed)
-        try {
-          const userDataToSync = {
-            email: currentFirebaseUser.email,
-            displayName: currentFirebaseUser.displayName,
-            photoURL: currentFirebaseUser.photoURL,
-            createdAt: currentFirebaseUser.metadata.creationTime,
-            lastLogin: currentFirebaseUser.metadata.lastSignInTime,
-          };
-          // console.log('Syncing user data to backend:', userDataToSync); // Optional: keep if useful
-          // await axios.post(`/api/profile/${currentFirebaseUser.uid}/sync-auth`, userDataToSync); // Commented out to prevent 404 if backend endpoint is not ready
-        } catch (syncError: any) {
-          console.error("Error syncing user data to backend:", syncError);
-          // This error is secondary to profile loading, so might not set authError globally
-        }
-
-      } else {
-        // User is signed out
-        setProfile({
-          id: uuidv4(), name: '', age: 25, gender: 'male', bio: '', interests: [], photos: [],
-          location: { city: '', state: '' }, preferences: { minAge: 18, maxAge: 45, gender: [] }, lastActive: new Date()
-        });
-        setAdditionalInfo({
-            height: '', weight: '', sexuality: '', maritalStatus: '', bodyType: '',
-            skinColor: '', ethnicity: '', education: '', job: '', jobTitle: '',
-            religion: '', interestsDescription: '', languagesLearning: '', dreams: '',
-            degree: '', diet: '', sleepSchedule: '', fitnessLevel: '', workLifeBalance: '',
-            livingSituation: '', travelPreference: '', familyRelationship: '',
-            financialSituation: '', socialLife: '', drinking: 'sometimes', smoking: 'no',
-            languages: [], lookingFor: []
-        });
-        setAuthError(null);
+      } catch (err) {
+        console.error('Error loading profile from Firestore:', err);
       }
-      console.log('[Auth] onAuthStateChanged: Final check before setAuthLoading(false). currentFirebaseUser:', currentFirebaseUser);
-      setAuthLoading(false);
-    }); // End of onAuthStateChanged callback
+    };
+    fetchProfile();
+  }, [googleUser]);
 
-    return () => unsubscribe(); // Cleanup function for useEffect
-  }, []); // Empty dependency array to run only once on mount
-
-  // The handleGoogleSignIn function that used Firebase signInWithPopup has been removed.
-  // Google Sign-In is now managed by AuthContext.
-
-  // Cascade: Conditional rendering logic for auth state will be prepended to the main return.
-  // The original 'Profile state' and subsequent form logic will only render if firebaseUser is authenticated.
   // Profile state
   const [profile, setProfile] = useState<User>({
     id: uuidv4(),
@@ -813,15 +702,15 @@ const cleanObjectForFirestore = (obj: any): any => {
   };
 
   const saveProfile = async () => {
-    console.log('[Auth] saveProfile: Attempting to save. firebaseUser:', firebaseUser, 'authLoading:', authLoading);
+    console.log('[Auth] saveProfile: Attempting to save. googleUser:', googleUser, 'isAuthenticated:', isAuthenticated);
 
-    if (!firebaseUser) {
+    if (!isAuthenticated || !googleUser) {
       alert("You are not logged in. Please sign in with Google to save your profile.");
-      handleFirebaseGoogleSignIn(); // Initiate Firebase Google Sign-In
+      loginWithGoogle(); // Use AuthContext's login
       return; // Stop further execution, user will need to click save again after sign-in
     }
 
-    // At this point, firebaseUser (from Firebase onAuthStateChanged) is available.
+    // At this point, googleUser (from AuthContext) is available.
     // Proceed with profile validation and saving.
 
     const validationErrors = validateProfile();
@@ -842,7 +731,7 @@ const cleanObjectForFirestore = (obj: any): any => {
       });
 
       // 2. Upload photos and get their updated states (with storageUrls, errors, etc.)
-      const uploadedPhotoObjects = await uploadAndGetPhotoUrls(photosToProcess, firebaseUser.uid);
+      const uploadedPhotoObjects = await uploadAndGetPhotoUrls(photosToProcess, googleUser.id);
 
       // Update component state with results of uploads (e.g., new URLs, errors)
       setProfile(prev => ({ ...prev, photos: uploadedPhotoObjects }));
@@ -870,7 +759,8 @@ const cleanObjectForFirestore = (obj: any): any => {
 
       const profileDataForFirestore = {
         ...cleanedProfile,
-        id: firebaseUser.uid, // Ensure UID from auth user
+        id: googleUser.id, // Ensure UID from Google user
+        email: googleUser.email,
         photos: photosForFirestore, // Use the cleaned and successfully uploaded/existing photos
         lastActive: new Date(), // Firestore will convert to Timestamp
       };
@@ -881,11 +771,11 @@ const cleanObjectForFirestore = (obj: any): any => {
       // 5. Save to Firestore
       console.log('Data for Firestore - profile:', JSON.stringify(profileDataForFirestore, null, 2));
       console.log('Data for Firestore - additionalInfo:', JSON.stringify(additionalInfoToSave, null, 2));
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocRef = doc(db, 'users', googleUser.id);
       await setDoc(userDocRef, {
         profile: profileDataForFirestore,
         additionalInfo: additionalInfoToSave,
-        uid: firebaseUser.uid, // Also store uid at the top level for easier querying if needed
+        uid: googleUser.id, // Also store uid at the top level for easier querying if needed
         updatedAt: new Date(), // General timestamp for the record
       }, { merge: true });
 
@@ -906,6 +796,7 @@ const cleanObjectForFirestore = (obj: any): any => {
       // Decide if props.onProfileSaved should be called on error
     }
   };
+
 
   // Animation variants
   const sectionVariants = {
