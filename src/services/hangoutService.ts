@@ -1,4 +1,4 @@
-import { doc, updateDoc, query, collection, where, getDocs, GeoPoint, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs, GeoPoint, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { Location, UserAvailability, FirebaseUser } from '../types/hangout';
 
@@ -59,8 +59,7 @@ export const hangoutService = {
       const q = query(
         usersRef,
         where('availability.isAvailable', '==', true),
-        // Order by lastActiveAt to ensure we get recently active users
-        where('availability.lastActiveAt', '>', new Date(Date.now() - 24 * 60 * 60 * 1000)) // Last 24 hours
+        orderBy('availability.lastActiveAt', 'desc')
       );
       
       const querySnapshot = await getDocs(q);
