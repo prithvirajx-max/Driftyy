@@ -177,15 +177,27 @@ const ChatRoom: React.FC = () => {
     }
   }, [id]);
 
+  // Scroll to the bottom of the chat messages
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Adjust scroll when keyboard opens
+  useEffect(() => {
+    const handleResize = () => {
+      scrollToBottom();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   // Scroll to bottom on initial render and when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Scroll to bottom of messages
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   // Handle click outside to close attachment menu and emoji picker
   useEffect(() => {
