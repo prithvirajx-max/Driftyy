@@ -1,6 +1,6 @@
-import { doc, updateDoc, query, collection, where, getDocs, GeoPoint, Timestamp, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, query, collection, where, getDocs, getDoc, Timestamp, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Location, UserAvailability, FirebaseUser } from '../types/hangout';
+import type { Location, UserAvailability, FirebaseUser } from '../types/hangout';
 
 // Function to calculate distance between two points using Haversine formula
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -20,6 +20,18 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 
 function toRad(degrees: number): number {
   return degrees * (Math.PI / 180);
+}
+
+interface UserProfileData {
+  name?: string;
+  displayName?: string;
+  age?: number;
+  photo?: string;
+  photoURL?: string;
+  gender?: 'male' | 'female' | 'other';
+  religion?: string;
+  height?: string;
+  bio?: string;
 }
 
 export const hangoutService = {
@@ -65,41 +77,52 @@ export const hangoutService = {
       const querySnapshot = await getDocs(q);
       const nearbyUsers: FirebaseUser[] = [];
       
-      querySnapshot.forEach((doc) => {
-        const userData = doc.data();
-        
-        // Skip if no location data
-        if (!userData?.availability?.location) return;
-        
-        const distance = calculateDistance(
-          currentUserLocation.lat,
-          currentUserLocation.lng,
-          userData.availability.location.lat,
-          userData.availability.location.lng
-        );
-        
-        // Check if user is within the specified distance
-        if (distance <= maxDistance) {
-          // Apply gender filter if specified
-          if (genderFilter === 'all' || userData.gender === genderFilter) {
-            nearbyUsers.push({
-              id: doc.id,
-              name: userData.name || 'Anonymous',
-              age: userData.age || 0,
-              distance: distance,
-              photo: userData.photo || '',
-              availabilityReason: userData.availability?.reason || '',
-              availabilityDuration: userData.availability?.duration || '',
-              religion: userData.religion,
-              height: userData.height,
-              bio: userData.bio,
-              gender: userData.gender || 'other',
-              lastActive: userData.availability?.lastActiveAt?.toDate().toLocaleString(),
-              location: userData.availability?.location
-            });
+      for (const userDoc of querySnapshot.docs) {
+        try {
+          const userData = userDoc.data();
+          
+          // Skip if no location data
+          if (!userData?.availability?.location) continue;
+          
+          // Get user's profile data from userProfiles collection
+          const userProfileRef = doc(db, 'userProfiles', userDoc.id);
+          const profileSnapshot = await getDoc(userProfileRef);
+          const profileData = profileSnapshot.data() as UserProfileData | undefined;
+          
+          const distance = calculateDistance(
+            currentUserLocation.lat,
+            currentUserLocation.lng,
+            userData.availability.location.lat,
+            userData.availability.location.lng
+          );
+          
+          // Check if user is within the specified distance
+          if (distance <= maxDistance) {
+            // Apply gender filter if specified
+            const userGender = profileData?.gender || userData.gender;
+            if (genderFilter === 'all' || userGender === genderFilter) {
+              nearbyUsers.push({
+                id: userDoc.id,
+                name: profileData?.name || profileData?.displayName || userData.name || 'Anonymous',
+                age: profileData?.age || userData.age || 0,
+                distance: distance,
+                photo: profileData?.photoURL || profileData?.photo || userData.photo || '',
+                availabilityReason: userData.availability?.reason || '',
+                availabilityDuration: userData.availability?.duration || '',
+                religion: profileData?.religion || userData.religion || 'Not specified',
+                height: profileData?.height || userData.height || 'Not specified',
+                bio: profileData?.bio || userData.bio || 'No bio available',
+                gender: userGender || 'other',
+                lastActive: userData.availability?.lastActiveAt?.toDate().toLocaleString(),
+                location: userData.availability?.location
+              });
+            }
           }
+        } catch (profileError) {
+          console.error('Error fetching profile for user:', userDoc.id, profileError);
+          continue;
         }
-      });
+      }
       
       // Sort by distance
       return nearbyUsers.sort((a, b) => a.distance - b.distance);
