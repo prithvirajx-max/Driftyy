@@ -78,49 +78,39 @@ export const hangoutService = {
       const nearbyUsers: FirebaseUser[] = [];
       
       for (const userDoc of querySnapshot.docs) {
-        try {
-          const userData = userDoc.data();
-          
-          // Skip if no location data
-          if (!userData?.availability?.location) continue;
-          
-          // Get user's profile data from userProfiles collection
-          const userProfileRef = doc(db, 'userProfiles', userDoc.id);
-          const profileSnapshot = await getDoc(userProfileRef);
-          const profileData = profileSnapshot.data() as UserProfileData | undefined;
-          
-          const distance = calculateDistance(
-            currentUserLocation.lat,
-            currentUserLocation.lng,
-            userData.availability.location.lat,
-            userData.availability.location.lng
-          );
-          
-          // Check if user is within the specified distance
-          if (distance <= maxDistance) {
-            // Apply gender filter if specified
-            const userGender = profileData?.gender || userData.gender;
-            if (genderFilter === 'all' || userGender === genderFilter) {
-              nearbyUsers.push({
-                id: userDoc.id,
-                name: profileData?.name || profileData?.displayName || userData.name || 'Anonymous',
-                age: profileData?.age || userData.age || 0,
-                distance: distance,
-                photo: profileData?.photoURL || profileData?.photo || userData.photo || '',
-                availabilityReason: userData.availability?.reason || '',
-                availabilityDuration: userData.availability?.duration || '',
-                religion: profileData?.religion || userData.religion || 'Not specified',
-                height: profileData?.height || userData.height || 'Not specified',
-                bio: profileData?.bio || userData.bio || 'No bio available',
-                gender: userGender || 'other',
-                lastActive: userData.availability?.lastActiveAt?.toDate().toLocaleString(),
-                location: userData.availability?.location
-              });
-            }
+        const userData = userDoc.data();
+        
+        // Skip if no location data
+        if (!userData?.availability?.location) continue;
+        
+        const distance = calculateDistance(
+          currentUserLocation.lat,
+          currentUserLocation.lng,
+          userData.availability.location.lat,
+          userData.availability.location.lng
+        );
+        
+        // Check if user is within the specified distance
+        if (distance <= maxDistance) {
+          // Apply gender filter if specified
+          const userGender = userData.profile?.gender;
+          if (genderFilter === 'all' || userGender === genderFilter) {
+            nearbyUsers.push({
+              id: userDoc.id,
+              name: userData.displayName || 'Anonymous',
+              age: userData.profile?.age ? parseInt(userData.profile.age) : 0,
+              distance: distance,
+              photo: userData.photoURL || (userData.photos?.[0]?.previewUrl) || '',
+              availabilityReason: userData.availability?.reason || '',
+              availabilityDuration: userData.availability?.duration || '1 hour',
+              religion: userData.additionalInfo?.religion || 'Not specified',
+              height: userData.additionalInfo?.height || 'Not specified',
+              bio: userData.profile?.bio || 'No bio available',
+              gender: userGender || 'other',
+              lastActive: userData.availability?.lastActiveAt?.toDate().toLocaleString(),
+              location: userData.availability?.location
+            });
           }
-        } catch (profileError) {
-          console.error('Error fetching profile for user:', userDoc.id, profileError);
-          continue;
         }
       }
       
