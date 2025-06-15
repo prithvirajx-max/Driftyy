@@ -1,16 +1,20 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaRegCommentDots, FaFilter, FaCheck, FaTimes, FaInfoCircle } from 'react-icons/fa';
-import { FiMapPin, FiClock } from 'react-icons/fi';
+import { FaRegCommentDots, FaHeart, FaFilter, FaCheck, FaTimes, FaInfoCircle, FaBan } from 'react-icons/fa';
+import { IoMdSend, IoIosNotifications } from 'react-icons/io';
+import { FiMapPin, FiClock, FiRefreshCw } from 'react-icons/fi';
 import { BiMale, BiFemale } from 'react-icons/bi';
 import { RiChatSmile3Line } from 'react-icons/ri';
 import { MdMyLocation, MdLocationOff } from 'react-icons/md';
 import axios from 'axios';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
+import { GoogleUser } from '../types/auth';
+import NotificationBell from '../components/notifications/NotificationBell';
+import { hangoutService } from '../services/hangoutService';
+import { Location } from '../types/hangout';
 import styles from './HangoutPage.module.css';
 
-// Mock data for nearby users
 interface User {
   id: string;
   name: string;
@@ -33,31 +37,13 @@ const DriftyLogo: React.FC = () => (
   </div>
 );
 
-// Mock data for users
-const mockNearbyUsers: User[] = [
-  {
-    id: '1',
-    name: 'Sophia',
-    age: 26,
-    distance: 3.2,
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
-    availabilityReason: 'Looking for good conversation over coffee',
-    availabilityDuration: '2 hours',
-    religion: 'Spiritual',
-    height: '5\'7"',
-    bio: 'Passionate about art, hiking, and trying new restaurants. Looking for someone to share adventures with!',
-    gender: 'female'
-  },
-  // Add more mock users here
-];
-
 const HangoutPage: React.FC = () => {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const { socket } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // State for availability and filters
+
+  // States
   const [isAvailable, setIsAvailable] = useState(false);
   const [showReasonPopup, setShowReasonPopup] = useState(false);
   const [availabilityReason, setAvailabilityReason] = useState('');
@@ -66,144 +52,145 @@ const HangoutPage: React.FC = () => {
   const [genderFilter, setGenderFilter] = useState<'all' | 'male' | 'female'>('all');
   const [distanceFilter, setDistanceFilter] = useState<5 | 10 | 30>(30);
   const [showFilters, setShowFilters] = useState(false);
-  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [userLocation, setUserLocation] = useState<Location | null>(null);
   const [isLocating, setIsLocating] = useState(false);
-  
-  // State for user interaction
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [networkError, setNetworkError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [showRequestSuccessPopup, setShowRequestSuccessPopup] = useState(false);
-  
-  // State for error handling
-  const [locationError, setLocationError] = useState<string | null>(null);
-  const [networkError, setNetworkError] = useState<string | null>(null);
-  
-  // State for real-time updates - Simplified after removing request features
-  
+
   // Function to get user's location
-  const getUserLocation = useCallback((): Promise<{lat: number, lng: number}> => {
+  const getUserLocation = useCallback(async (): Promise<Location> => {
     return new Promise((resolve, reject) => {
-      setIsLocating(true);
       if (!navigator.geolocation) {
-        setIsLocating(false);
-        setLocationError('Geolocation is not supported by your browser');
-        reject(new Error('Geolocation not supported'));
+        reject(new Error('Geolocation is not supported'));
         return;
       }
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const location = {
+          const location: Location = {
             lat: position.coords.latitude,
-            lng: position.coords.longitude
+            lng: position.coords.longitude,
           };
           setUserLocation(location);
-          setIsLocating(false);
           resolve(location);
         },
         (error) => {
-          setIsLocating(false);
-          let errorMessage = 'Failed to get your location';
-          
-          switch(error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'You denied the request for location. To use this feature, please enable location access.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Location information is unavailable.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'The request to get your location timed out.';
-              break;
-          }
-          
-          setLocationError(errorMessage);
-          reject(new Error(errorMessage));
+          reject(error);
         }
       );
     });
   }, []);
 
-  // Update availability status in the backend
-  const updateAvailabilityStatus = useCallback(async (status: boolean, reason: string, duration: string) => {
-    if (!token) return;
-    
+  // Function to fetch nearby users
+  const fetchNearbyUsers = useCallback(async () => {
+    if (!userLocation || !user?.id) return;
+
     try {
-      setNetworkError(null);
-      
-      // If turning on availability, ensure we have location
-      if (status && !userLocation) {
-        setNetworkError('Location is required to turn on availability');
-        return;
-      }
-      
-      const response = await axios.put('/api/hangouts/availability', {
-        isAvailable: status,
-        reason,
-        duration,
-        // Include location data if available and status is true
-        ...(status && userLocation && { location: userLocation })
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      if (response.data.success) {
-        // Successfully updated in backend
-        // Update socket status if socket is available
-        if (socket) {
-          socket.emit('update_availability', {
-            isAvailable: status,
-            reason,
-            duration,
-            ...(status && userLocation && { location: userLocation })
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error updating availability status:', error);
-      setNetworkError('Failed to update your availability status. Please try again.');
-      // Revert the UI state if there was an error
-      setIsAvailable(!status);
-    }
-  }, [token, socket, userLocation]);
-  
-  // Handle real-time socket events
-  useEffect(() => {
-    if (!socket) return;
-    
-    // Listen for user availability updates
-    const handleAvailabilityUpdate = (data: { userId: string; reason: string; duration: string }) => {
-      // Update the filteredUsers list if the user is in it
-      setFilteredUsers(prev => 
-        prev.map(user => {
-          if (user.id === data.userId) {
-            return {
-              ...user,
-              availabilityReason: data.reason,
-              availabilityDuration: data.duration
-            };
-          }
-          return user;
-        })
+      const nearbyUsers = await hangoutService.getNearbyUsers(
+        userLocation,
+        distanceFilter,
+        genderFilter
       );
+      setFilteredUsers(nearbyUsers);
+      setNetworkError(null);
+    } catch (error) {
+      console.error('Error fetching nearby users:', error);
+      setNetworkError('Failed to fetch nearby users. Please try again.');
+    }
+  }, [userLocation, distanceFilter, genderFilter, user]);
+
+  // Effect to update availability
+  useEffect(() => {
+    const updateAvailability = async () => {
+      if (!user?.id || !userLocation) return;
+
+      try {
+        await hangoutService.updateAvailability(user.id, {
+          isAvailable,
+          reason: availabilityReason,
+          duration: availabilityDuration,
+          location: {
+            lat: userLocation.lat,
+            lng: userLocation.lng
+          }
+        });
+
+        if (isAvailable) {
+          fetchNearbyUsers();
+        } else {
+          setFilteredUsers([]);
+        }
+      } catch (error) {
+        console.error('Error updating availability:', error);
+        setNetworkError('Failed to update availability. Please try again.');
+      }
     };
-    
-    socket.on('user_availability_update', handleAvailabilityUpdate);
-    
-    // Clean up socket listeners
+
+    updateAvailability();
+  }, [isAvailable, availabilityReason, availabilityDuration, userLocation, user, fetchNearbyUsers]);
+
+  // Effect to get initial location
+  useEffect(() => {
+    const initializeLocation = async () => {
+      setIsLocating(true);
+      try {
+        await getUserLocation();
+        setLocationError(null);
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setLocationError('Failed to get your location. Please enable location services.');
+      } finally {
+        setIsLocating(false);
+      }
+    };
+
+    initializeLocation();
+  }, [getUserLocation]);
+
+  // Effect to refetch users when filters change
+  useEffect(() => {
+    if (isAvailable && userLocation) {
+      fetchNearbyUsers();
+    }
+  }, [isAvailable, genderFilter, distanceFilter, userLocation, fetchNearbyUsers]);
+
+  // Clean up effect
+  useEffect(() => {
     return () => {
-      socket.off('user_availability_update', handleAvailabilityUpdate);
+      if (isAvailable && user?.id && userLocation) {
+        hangoutService.updateAvailability(user.id, {
+          isAvailable: false,
+          reason: '',
+          duration: '',
+          location: {
+            lat: userLocation.lat,
+            lng: userLocation.lng
+          }
+        });
+      }
     };
-  }, [socket]);
-  
+  }, [isAvailable, user, userLocation]);
+
+  // Modify existing functions to use the new functionality
+  const handleAvailabilitySubmit = async () => {
+    if (!availabilityReason.trim()) return;
+    setIsAvailable(true);
+    setShowReasonPopup(false);
+  };
+
+  const handleEndHangout = async () => {
+    setIsAvailable(false);
+    setFilteredUsers([]);
+  };
+
   // Initialize and set up the page
   useEffect(() => {
     // Apply the app's theme styling
     document.body.style.overflow = 'auto';
     document.body.style.background = 'linear-gradient(135deg, #FF4E8E 0%, #7B2FF6 100%)';
-    
-    // Filter users based on criteria
-    filterUsers();
     
     return () => {
       // Clean up styles when component unmounts
@@ -214,17 +201,12 @@ const HangoutPage: React.FC = () => {
   
   // Filter users whenever criteria changes
   useEffect(() => {
-    filterUsers();
-  }, [isAvailable, genderFilter, distanceFilter]);
-  
-  // Filter users based on selected criteria
-  const filterUsers = () => {
     if (!isAvailable) {
       setFilteredUsers([]);
       return;
     }
     
-    const filtered = mockNearbyUsers.filter(user => {
+    const filtered = filteredUsers.filter(user => {
       // Filter by distance
       if (user.distance > distanceFilter) return false;
       
@@ -235,8 +217,8 @@ const HangoutPage: React.FC = () => {
     });
     
     setFilteredUsers(filtered);
-  };
-
+  }, [isAvailable, genderFilter, distanceFilter]);
+  
   const handleAvailabilityToggle = async () => {
     if (!isAvailable) {
       // First check if we have the location before showing reason popup
@@ -259,8 +241,7 @@ const HangoutPage: React.FC = () => {
       setAvailabilityReason('');
       setAvailabilityDuration('1 hour');
       
-      // Update availability status in backend
-      updateAvailabilityStatus(false, '', '');
+      // Server update will be handled by the effect
     }
   };
 
@@ -270,16 +251,10 @@ const HangoutPage: React.FC = () => {
       setIsAvailable(true);
       setShowReasonPopup(false);
       
-      // Update availability status in backend
-      updateAvailabilityStatus(true, availabilityReason, availabilityDuration);
-      
-      // Update filtered users
-      filterUsers();
+      // Server update will be handled by the effect
     }
   };
   
-  // Removed request handling functions
-
   const openUserProfile = (user: User) => {
     setSelectedUser(user);
     setRequestMessage('');
@@ -613,13 +588,13 @@ const HangoutPage: React.FC = () => {
                   <button
                     className={styles.sendRequestButton}
                     onClick={() => {
-                      if (!token || !selectedUser) return;
+                      if (!user || !selectedUser) return;
                       
                       axios.post('/api/hangouts/requests', {
                         recipientId: selectedUser.id,
                         message: requestMessage,
                       }, {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${user.token}` }
                       })
                       .then(response => {
                         if (response.data.success) {

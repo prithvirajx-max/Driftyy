@@ -17,6 +17,8 @@ interface GoogleUser {
   token: string; // This is the access_token
 }
 
+import { AuthContextType } from '../types/auth';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function useAuth() {
