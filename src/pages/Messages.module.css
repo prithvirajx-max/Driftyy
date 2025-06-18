@@ -278,8 +278,10 @@
 }
 
 .sent .bubbleContent {
-  background: var(--glass-highlight);
+  /* Outgoing message – soft pink glass gradient */
+  background: linear-gradient(135deg, rgba(255,105,180,0.35) 0%, rgba(255,154,200,0.35) 100%);
   border-bottom-right-radius: 6px;
+  box-shadow: 0 2px 8px rgba(255,105,180,0.3);
 }
 
 .received {
@@ -287,7 +289,10 @@
 }
 
 .received .bubbleContent {
+  /* Incoming message – soft violet glass gradient */
+  background: linear-gradient(135deg, rgba(147,51,234,0.35) 0%, rgba(75,0,130,0.35) 100%);
   border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 8px rgba(147,51,234,0.3);
 }
 
 /* Media messages */

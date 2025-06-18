@@ -125,14 +125,16 @@
 }
 
 .sendButton.active {
-  background: rgba(50, 217, 203, 0.8);
-  color: white;
+  background: linear-gradient(135deg, rgba(255,105,180,0.85) 0%, rgba(147,51,234,0.85) 100%);
+  color: #fff;
   cursor: pointer;
+  box-shadow: 0 0 8px rgba(255,105,180,0.6);
 }
 
 .sendButton.active:hover {
-  background: rgba(50, 217, 203, 1);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(255,105,180,1) 0%, rgba(147,51,234,1) 100%);
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(255,105,180,0.8);
 }
 
 /* Loading state for buttons */

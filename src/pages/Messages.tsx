@@ -7,6 +7,9 @@ import {
 } from 'react-icons/fi';
 import EmojiPicker from 'emoji-picker-react';
 import styles from './Messages.module.css';
+import { useAuth } from '../contexts/AuthContext';
+import { listenConversations, listenMessages, sendTextMessage } from '../services/chatService';
+import { getUserProfile } from '../services/userService';
 
 // Types
 interface Media {
@@ -27,6 +30,7 @@ interface Message {
 }
 
 interface Chat {
+  participants: string[];
   id: string;
   name: string;
   avatar: string;
@@ -38,6 +42,7 @@ interface Chat {
 }
 
 export default function Messages() {
+  const { user } = useAuth();
   // States
   const [chats, setChats] = useState<Chat[]>([]);
   const [activeChat, setActiveChat] = useState<Chat | null>(null);
@@ -58,6 +63,56 @@ export default function Messages() {
   const recordingTimerRef = useRef<number | null>(null);
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  // --- Firestore listeners ---
+  useEffect(() => {
+    if (!user) return;
+    const unsubConvs = listenConversations(user.id, (snapshot: import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>) => {
+      (async () => {
+      const convs: Chat[] = [];
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data() as any;
+        const participants: string[] = data.participants || [];
+        const otherId = participants.find(p => p !== user.id) || user.id;
+        const otherProfile = await getUserProfile(otherId);
+        const chat: Chat = {
+          id: docSnap.id,
+          participants,
+          name: otherProfile?.displayName || 'Unknown',
+          avatar: otherProfile?.photoURL || '',
+          isOnline: false,
+          lastSeen: '',
+          unreadCount: 0,
+          typing: false,
+          messages: [],
+        };
+        convs.push(chat);
+        // listen messages for each conversation
+        listenMessages(docSnap.id, (msgSnap: import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>) => {
+          setChats((prev) => {
+            const updated = prev.map(c => c.id === chat.id ? { ...c, messages: msgSnap.docs.map((d: import('firebase/firestore').QueryDocumentSnapshot<import('firebase/firestore').DocumentData>) => {
+              const mData = d.data();
+              return {
+                id: d.id,
+                sender: mData.sender,
+                text: mData.text,
+                time: mData.createdAt?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '',
+                isRead: false,
+                reactions: [],
+                media: mData.media,
+              } as Message;
+            }) } : c);
+            return updated;
+          });
+        });
+      }
+      setChats(convs);
+      })();
+    });
+    return () => {
+      unsubConvs();
+    };
+  }, [user]);
+
   // Effects
   useEffect(() => {
     // Scroll to bottom on new messages
@@ -76,8 +131,9 @@ export default function Messages() {
     };
   }, []);
 
-  // Mock data for chats
-  const mockChats: Chat[] = [
+  /* Mock data removed; old mock chats
+  // --- removed mock chats; Firestore provides data ---
+// const mockChats: Chat[] = [] as any;
     {
       id: '1',
       name: 'Alex Johnson',
@@ -125,15 +181,19 @@ export default function Messages() {
       ],
     },
   ];
+*/
 
-  // Initialize chats with mock data
+  // chats are now loaded from Firestore
   useEffect(() => {
-    setChats(mockChats);
+    // setChats([]);
   }, []);
 
   // Handlers
   const handleSend = () => {
+    if (!user) return;
     if (!activeChat || (!message.trim() && !selectedMedia && !isRecording)) return;
+
+    sendTextMessage(user.id, activeChat!.participants.find(p=>p!==user.id) || '', message.trim());
 
     const newMessage: Message = {
       id: `m${Date.now()}`,

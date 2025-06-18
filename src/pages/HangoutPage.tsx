@@ -6,7 +6,8 @@ import { FiMapPin, FiClock, FiRefreshCw } from 'react-icons/fi';
 import { BiMale, BiFemale } from 'react-icons/bi';
 import { RiChatSmile3Line } from 'react-icons/ri';
 import { MdMyLocation, MdLocationOff } from 'react-icons/md';
-import axios from 'axios';
+// import axios from 'axios';
+import { sendTextMessage } from '../services/chatService';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GoogleUser } from '../types/auth';
@@ -590,30 +591,18 @@ const HangoutPage: React.FC = () => {
                     onClick={() => {
                       if (!user || !selectedUser) return;
                       
-                      axios.post('/api/hangouts/requests', {
-                        recipientId: selectedUser.id,
-                        message: requestMessage,
-                      }, {
-                        headers: { Authorization: `Bearer ${user.token}` }
-                      })
-                      .then(response => {
-                        if (response.data.success) {
-                          // Show success popup
+                      sendTextMessage(user.id, selectedUser.id, requestMessage)
+                        .then(() => {
                           setShowRequestSuccessPopup(true);
-                          
-                          // Show success notification only
-                          
-                          // Automatically close after 3 seconds
                           setTimeout(() => {
                             setShowRequestSuccessPopup(false);
                             setSelectedUser(null);
                           }, 3000);
-                        }
-                      })
-                      .catch(error => {
-                        console.error('Error sending hangout request:', error);
-                        setNetworkError('Failed to send hangout request. Please try again.');
-                      });
+                        })
+                        .catch((err) => {
+                          console.error('Error sending hangout request:', err);
+                          setNetworkError('Failed to send hangout request. Please try again.');
+                        });
                     }}
                     disabled={!requestMessage.trim()}
                   >
