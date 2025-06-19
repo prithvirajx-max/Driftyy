@@ -632,6 +632,7 @@
     width: 200vw !important;          /* two screens wide */
     transform: translateX(0) !important;
     transition: transform 0.3s ease-in-out;
+    overflow: hidden; /* prevent panels from bleeding */
   }
 
   /* Slide to the chat room when class added */
@@ -643,6 +644,10 @@
   .chatList,
   .chatRoom {
     width: 100vw !important;
+    max-width: 100vw !important;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
     flex-shrink: 0 !important;
     height: 100vh;
     display: flex;
