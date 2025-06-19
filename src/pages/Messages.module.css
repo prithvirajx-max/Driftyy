@@ -55,7 +55,9 @@
 
 /* Chat list (inbox) */
 .chatList {
-  width: 380px;
+  width: 33%;
+  max-width: 380px;
+  min-width: 260px;
   height: 100%;
   background: var(--glass-bg);
   backdrop-filter: var(--blur-effect);
@@ -215,7 +217,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-left: 48px; /* Add margin to move it right */
+  /* Removed margin-left to align like Instagram DM header */
+  margin-left: 0;
 }
 
 .roomActions {
@@ -251,6 +254,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -275,6 +279,8 @@
 
 .sent {
   align-self: flex-end;
+  margin-left: auto;
+  text-align: right;
 }
 
 .sent .bubbleContent {
@@ -286,6 +292,8 @@
 
 .received {
   align-self: flex-start;
+  margin-right: auto;
+  text-align: left;
 }
 
 .received .bubbleContent {
@@ -304,7 +312,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.mediaImg, .mediaVid {
+.mediaImg, .mediaVid, .mediaAudio {
   width: 100%;
   height: auto;
   display: block;
@@ -312,7 +320,8 @@
 }
 
 .mediaContainer:hover .mediaImg,
-.mediaContainer:hover .mediaVid {
+.mediaContainer:hover .mediaVid,
+.mediaContainer:hover .mediaAudio {
   transform: scale(1.02);
 }
 
@@ -357,6 +366,19 @@
 
 .input:focus {
   outline: none;
+}
+
+/* Placeholder style */
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Empty conversation */
+.emptyMessage {
+  margin: auto;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
 }
 
 /* Action buttons */
@@ -405,6 +427,7 @@
   }
 
   .chatRoom {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -512,3 +535,89 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* --- Instagram style enhancements --- */
+
+/* Hide inbox list when chat room is open on mobile */
+@media (max-width: 768px) {
+  .showChatRoom .chatList {
+    display: none;
+  }
+  .showChatRoom .chatRoom {
+    display:flex;
+  }
+}
+
+/* Inbox card inner layout */
+.inboxInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inboxInfo h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inboxTime {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.lastMessage {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unreadBadge {
+  background: #ff375f;
+  color: white;
+  font-size: 0.7rem;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* Mobile back button inside room header */
+.mobileBack {
+  display: none;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+  .mobileBack {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+

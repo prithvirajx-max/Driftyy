@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FiSearch, FiSend, FiImage, FiVideo, FiMic, FiPhone,
@@ -8,12 +8,12 @@ import {
 import EmojiPicker from 'emoji-picker-react';
 import styles from './Messages.module.css';
 import { useAuth } from '../contexts/AuthContext';
-import { listenConversations, listenMessages, sendTextMessage } from '../services/chatService';
+import { listenConversations, listenMessages, sendTextMessage, sendMediaMessage, markMessagesSeen } from '../services/chatService';
 import { getUserProfile } from '../services/userService';
 
 // Types
 interface Media {
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'audio';
   url: string;
   thumbnail?: string;
 }
@@ -24,9 +24,10 @@ interface Message {
   text?: string;
   media?: Media;
   time: string;
-  isRead: boolean;
+  seen: boolean;
   replyTo?: string;
   reactions: string[];
+  createdAt?: any;
 }
 
 interface Chat {
@@ -39,6 +40,13 @@ interface Chat {
   unreadCount: number;
   messages: Message[];
   typing: boolean;
+  lastMessage?: {
+    text?: string;
+    type: string;
+    sender: string;
+    time: string;
+    seen: boolean;
+  };
 }
 
 export default function Messages() {
@@ -64,60 +72,104 @@ export default function Messages() {
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   // --- Firestore listeners ---
+  // Listen for conversations
   useEffect(() => {
-    if (!user) return;
-    const unsubConvs = listenConversations(user.id, (snapshot: import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>) => {
-      (async () => {
-      const convs: Chat[] = [];
-      for (const docSnap of snapshot.docs) {
-        const data = docSnap.data() as any;
-        const participants: string[] = data.participants || [];
-        const otherId = participants.find(p => p !== user.id) || user.id;
+    if (!user) {
+      setChats([]);
+      return;
+    }
+
+    const unsub = listenConversations(user.id, async (snapshot) => {
+      const conversationsPromises = snapshot.docs.map(async (docSnap) => {
+        const data = docSnap.data();
+        const participants = data.participants || [];
+        const otherId = participants.find((p: string) => p !== user.id) || '';
+        
+        if (!otherId) return null;
+
         const otherProfile = await getUserProfile(otherId);
-        const chat: Chat = {
+        
+        const lastMessageData = data.lastMessage;
+        const lastMessage = lastMessageData ? {
+            text: lastMessageData.text,
+            type: lastMessageData.type,
+            sender: lastMessageData.sender,
+            time: lastMessageData.createdAt?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '',
+            seen: lastMessageData.seen || false,
+        } : undefined;
+
+        return {
           id: docSnap.id,
           participants,
-          name: otherProfile?.displayName || 'Unknown',
-          avatar: otherProfile?.photoURL || '',
+          name: otherProfile?.displayName || 'Unknown User',
+          avatar: otherProfile?.photoURL || '/default-avatar.png',
           isOnline: false,
-          lastSeen: '',
-          unreadCount: 0,
+          lastSeen: 'long ago',
           typing: false,
           messages: [],
-        };
-        convs.push(chat);
-        // listen messages for each conversation
-        listenMessages(docSnap.id, (msgSnap: import('firebase/firestore').QuerySnapshot<import('firebase/firestore').DocumentData>) => {
-          setChats((prev) => {
-            const updated = prev.map(c => c.id === chat.id ? { ...c, messages: msgSnap.docs.map((d: import('firebase/firestore').QueryDocumentSnapshot<import('firebase/firestore').DocumentData>) => {
-              const mData = d.data();
-              return {
-                id: d.id,
-                sender: mData.sender,
-                text: mData.text,
-                time: mData.createdAt?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '',
-                isRead: false,
-                reactions: [],
-                media: mData.media,
-              } as Message;
-            }) } : c);
-            return updated;
-          });
-        });
-      }
-      setChats(convs);
-      })();
+          lastMessage: lastMessage,
+          unreadCount: 0, // Will be calculated
+        } as Chat;
+      });
+
+      const conversations = (await Promise.all(conversationsPromises)).filter(Boolean) as Chat[];
+      setChats(conversations);
     });
-    return () => {
-      unsubConvs();
-    };
+
+    return () => unsub();
   }, [user]);
+
+  // Listen for messages of the active chat
+  useEffect(() => {
+    if (!activeChat?.id || !user) return;
+
+    const unsub = listenMessages(activeChat.id, (snapshot) => {
+      const messages = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          sender: data.sender,
+          text: data.text,
+          media: data.media,
+          seen: data.seen || false,
+          reactions: data.reactions || [],
+          replyTo: data.replyTo,
+          createdAt: data.createdAt,
+          time: data.createdAt?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || '',
+        } as Message;
+      });
+
+      const unreadCount = messages.filter(m => !m.seen && m.sender !== user.id).length;
+
+      setChats(prevChats => prevChats.map(chat =>
+        chat.id === activeChat.id ? { ...chat, messages, unreadCount } : chat
+      ));
+    });
+
+    return () => unsub();
+  }, [activeChat?.id, user]);
+
+  // Mark messages as seen
+  useEffect(() => {
+    if (activeChat && user && activeChat.unreadCount > 0) {
+      markMessagesSeen(activeChat.id, user.id);
+    }
+  }, [activeChat, user]);
 
   // Effects
   useEffect(() => {
     // Scroll to bottom on new messages
     messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [activeChat?.messages]);
+
+  // Keep activeChat reference in sync with latest chats data
+  useEffect(() => {
+    if (!activeChat) return;
+    const updated = chats.find(c => c.id === activeChat.id);
+    if (updated && updated !== activeChat) {
+      setActiveChat(updated);
+    }
+  }, [chats, activeChat]);
 
   useEffect(() => {
     // Cleanup recording on unmount
@@ -131,98 +183,58 @@ export default function Messages() {
     };
   }, []);
 
-  /* Mock data removed; old mock chats
-  // --- removed mock chats; Firestore provides data ---
-// const mockChats: Chat[] = [] as any;
-    {
-      id: '1',
-      name: 'Alex Johnson',
-      avatar: 'https://randomuser.me/api/portraits/men/1.jpg',
-      isOnline: true,
-      lastSeen: 'Online now',
-      unreadCount: 2,
-      typing: false,
-      messages: [
-        {
-          id: 'm1',
-          sender: 'Alex Johnson',
-          text: 'Hey, how are you?',
-          time: '10:30 AM',
-          isRead: true,
-          reactions: [],
-        },
-        {
-          id: 'm2',
-          sender: 'me',
-          text: 'I am good, thanks! How about you?',
-          time: '10:32 AM',
-          isRead: true,
-          reactions: [],
-        },
-      ],
-    },
-    {
-      id: '2',
-      name: 'Sarah Miller',
-      avatar: 'https://randomuser.me/api/portraits/women/2.jpg',
-      isOnline: false,
-      lastSeen: 'Last seen 2 hours ago',
-      unreadCount: 0,
-      typing: false,
-      messages: [
-        {
-          id: 'm1',
-          sender: 'Sarah Miller',
-          text: 'Hi! Are you coming to the meeting?',
-          time: '9:00 AM',
-          isRead: true,
-          reactions: [],
-        },
-      ],
-    },
-  ];
-*/
-
-  // chats are now loaded from Firestore
-  useEffect(() => {
-    // setChats([]);
-  }, []);
-
   // Handlers
-  const handleSend = () => {
-    if (!user) return;
-    if (!activeChat || (!message.trim() && !selectedMedia && !isRecording)) return;
+    const handleSend = () => {
+    if (!user || !activeChat) return;
+    const text = message.trim();
+    if (!text && !selectedMedia) return;
 
-    sendTextMessage(user.id, activeChat!.participants.find(p=>p!==user.id) || '', message.trim());
+    const otherId = activeChat.participants.find((p: string) => p !== user.id) || '';
+    if (!otherId) return;
 
+    const tempId = `temp_${Date.now()}`;
     const newMessage: Message = {
-      id: `m${Date.now()}`,
-      sender: 'me',
-      text: message.trim(),
+      id: tempId,
+      sender: user.id,
+      text: text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isRead: false,
+      seen: false,
       reactions: [],
-      replyTo: replyingTo?.id
+      replyTo: replyingTo?.id,
     };
-
+    
     if (selectedMedia) {
       const isVideo = selectedMedia.type.startsWith('video/');
+      const isAudio = selectedMedia.type.startsWith('audio/');
+      const type = isAudio ? 'audio' : isVideo ? 'video' : 'image';
       newMessage.media = {
-        type: isVideo ? 'video' : 'image',
+        type: type,
         url: URL.createObjectURL(selectedMedia),
-        thumbnail: isVideo ? URL.createObjectURL(selectedMedia) : undefined
       };
     }
 
-    setChats(prevChats => 
-      prevChats.map(chat => 
+    // Optimistically update the UI
+    setChats(prevChats =>
+      prevChats.map(chat =>
         chat.id === activeChat.id
           ? { ...chat, messages: [...chat.messages, newMessage] }
           : chat
       )
     );
+    
+    // Send to backend
+    if (selectedMedia) {
+      const isVideo = selectedMedia.type.startsWith('video/');
+      const isAudio = selectedMedia.type.startsWith('audio/');
+      const type = isAudio ? 'audio' : isVideo ? 'video' : 'image';
+      sendMediaMessage(user.id, otherId, selectedMedia, type, replyingTo?.id);
+    }
+    
+    if (text) {
+      sendTextMessage(user.id, otherId, text, replyingTo?.id);
+    }
 
-    // Reset states
+    // Reset input states
     setMessage('');
     setSelectedMedia(null);
     setReplyingTo(null);
@@ -303,7 +315,7 @@ export default function Messages() {
   };
 
   const renderMessage = (msg: Message) => {
-    const isMine = msg.sender === 'me';
+    const isMine = msg.sender === user?.id;
     const messageClass = isMine ? styles.sent : styles.received;
 
     return (
@@ -344,12 +356,18 @@ export default function Messages() {
             >
               {msg.media.type === 'image' ? (
                 <img src={msg.media.url} alt="" className={styles.mediaImg} />
-              ) : (
+              ) : msg.media.type === 'video' ? (
                 <video
                   src={msg.media.url}
                   poster={msg.media.thumbnail}
                   controls
                   className={styles.mediaVid}
+                />
+              ) : (
+                <audio
+                  src={msg.media.url}
+                  controls
+                  className={styles.mediaAudio}
                 />
               )}
             </div>
@@ -359,7 +377,7 @@ export default function Messages() {
         <div className={styles.messageInfo}>
           <span className={styles.timestamp}>{msg.time}</span>
           {isMine && <span className={styles.readStatus}>
-            {msg.isRead ? <FiCheckCircle /> : <FiCheck />}
+            {msg.seen ? <FiCheckCircle /> : <FiCheck />}
           </span>}
         </div>
 
@@ -410,9 +428,13 @@ export default function Messages() {
                       <img src={chat.avatar} alt={chat.name} className={styles.avatar} />
                       <span className={chat.isOnline ? styles.online : styles.offline} />
                     </div>
-                    
                     <div className={styles.inboxInfo}>
-                      <h3>{chat.name}</h3>
+                      <div className={styles.topRow}>
+                        <h3>{chat.name}</h3>
+                        <span className={styles.inboxTime}>
+                          {chat.messages[chat.messages.length - 1]?.time || ''}
+                        </span>
+                      </div>
                       <p className={styles.lastMessage}>
                         {chat.typing ? 'typing...' : 
                          chat.messages[chat.messages.length - 1]?.text || 'No messages yet'}
@@ -432,6 +454,12 @@ export default function Messages() {
         {activeChat && (
           <div className={styles.chatRoom}>
             <div className={styles.roomHeader}>
+              <button
+                className={styles.mobileBack}
+                onClick={() => setShowMobileChatRoom(false)}
+              >
+                <FiChevronLeft />
+              </button>
               <div className={styles.avatarWrap}>
                 <img src={activeChat.avatar} alt={activeChat.name} className={styles.avatar} />
                 <span className={activeChat.isOnline ? styles.online : styles.offline} />
@@ -463,7 +491,11 @@ export default function Messages() {
 
             <div className={styles.messagesArea}>
               <AnimatePresence>
-                {activeChat.messages.map(renderMessage)}
+                {activeChat.messages.length === 0 ? (
+                 <p className={styles.emptyMessage}>Start a conversation…</p>
+               ) : (
+                 activeChat.messages.map(renderMessage)
+               )}
               </AnimatePresence>
               <div ref={messageEndRef} />
             </div>
@@ -498,7 +530,7 @@ export default function Messages() {
 
                 <input
                   type="text"
-                  placeholder="Type a message..."
+                  placeholder="Type a message…"
                   className={styles.input}
                   value={message}
                   onChange={e => setMessage(e.target.value)}

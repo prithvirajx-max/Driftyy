@@ -11,7 +11,11 @@ import {
   doc,
   setDoc,
   serverTimestamp,
-  getDoc
+  getDoc,
+  getDocs,
+  writeBatch,
+  QueryDocumentSnapshot,
+  DocumentData
 } from 'firebase/firestore';
 
 /**
@@ -35,7 +39,8 @@ import {
  *      createdAt: Timestamp
  */
 
-import type { QuerySnapshot, DocumentData } from 'firebase/firestore';
+import type { QuerySnapshot } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const listenConversations = (
   userId: string,
@@ -77,27 +82,104 @@ const ensureConversation = async (
   return convId;
 };
 
+export const sendMediaMessage = async (
+  senderId: string,
+  receiverId: string,
+  file: File,
+  type: 'image' | 'video' | 'audio',
+  replyTo?: string
+) => {
+  const convId = await ensureConversation(senderId, receiverId);
+  const storage = getStorage();
+  const filePath = `messages/${convId}/${Date.now()}_${file.name}`;
+  const fileRef = ref(storage, filePath);
+  await uploadBytes(fileRef, file);
+  const url = await getDownloadURL(fileRef);
+
+  const msgsRef = collection(db, 'conversations', convId, 'messages');
+  const now = serverTimestamp();
+  
+  const messageData: any = {
+    sender: senderId,
+    type,
+    media: { url },
+    createdAt: now,
+    seen: false,
+  };
+  if (replyTo) messageData.replyTo = replyTo;
+
+  await addDoc(msgsRef, messageData);
+
+  await updateDoc(doc(db, 'conversations', convId), {
+    lastMessage: {
+      type,
+      sender: senderId,
+      text: type === 'image' ? '📷 Photo' : type === 'video' ? '🎥 Video' : '🎤 Audio',
+      createdAt: now,
+      seen: false,
+    },
+    updatedAt: now,
+  });
+};
+
+export const markMessagesSeen = async (
+  conversationId: string,
+  userId: string
+) => {
+  const msgsRef = collection(db, 'conversations', conversationId, 'messages');
+  const q = query(msgsRef, where('sender', '!=', userId), where('seen', '==', false));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+
+  const batch = writeBatch(db);
+  snap.docs.forEach((docSnap: QueryDocumentSnapshot<DocumentData>) => {
+    batch.update(docSnap.ref, { seen: true });
+  });
+
+  await batch.commit();
+
+  // Also update the lastMessage in the conversation
+  const convDoc = doc(db, 'conversations', conversationId);
+  const convSnap = await getDoc(convDoc);
+  if (convSnap.exists()) {
+    const convData = convSnap.data();
+    if (convData.lastMessage && convData.lastMessage.sender !== userId) {
+      await updateDoc(convDoc, {
+        'lastMessage.seen': true
+      });
+    }
+  }
+};
+
 export const sendTextMessage = async (
   senderId: string,
   receiverId: string,
-  text: string
+  text: string,
+  replyTo?: string
 ) => {
   if (!text.trim()) return;
   const convId = await ensureConversation(senderId, receiverId);
   const msgsRef = collection(db, 'conversations', convId, 'messages');
   const now = serverTimestamp();
-  await addDoc(msgsRef, {
+  
+  const messageData: any = {
     sender: senderId,
     type: 'text',
     text,
     createdAt: now,
-  });
+    seen: false,
+  };
+  if (replyTo) messageData.replyTo = replyTo;
+
+  await addDoc(msgsRef, messageData);
+
   await updateDoc(doc(db, 'conversations', convId), {
     lastMessage: {
       text,
       type: 'text',
       sender: senderId,
       createdAt: now,
+      seen: false,
     },
     updatedAt: now,
   });
