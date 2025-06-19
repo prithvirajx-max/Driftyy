@@ -44,7 +44,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export const listenConversations = (
   userId: string,
-  onUpdate: (snapshot: QuerySnapshot<DocumentData>) => void
+  onUpdate: (snapshot: QuerySnapshot<DocumentData>) => void,
+  onError?: (error: Error) => void
 ) => {
   const convRef = collection(db, 'conversations');
   const q = query(
@@ -52,16 +53,17 @@ export const listenConversations = (
     where('participants', 'array-contains', userId),
     orderBy('updatedAt', 'desc')
   );
-  return onSnapshot(q, onUpdate);
+  return onSnapshot(q, onUpdate, onError);
 };
 
 export const listenMessages = (
   conversationId: string,
-  onUpdate: (snapshot: QuerySnapshot<DocumentData>) => void
+  onUpdate: (snapshot: QuerySnapshot<DocumentData>) => void,
+  onError?: (error: Error) => void
 ) => {
   const msgsRef = collection(db, 'conversations', conversationId, 'messages');
   const q = query(msgsRef, orderBy('createdAt', 'asc'));
-  return onSnapshot(q, onUpdate);
+  return onSnapshot(q, onUpdate, onError);
 };
 
 const ensureConversation = async (

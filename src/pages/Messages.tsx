@@ -64,12 +64,20 @@ export default function Messages() {
   const [lightboxMedia, setLightboxMedia] = useState<Media | null>(null);
   const [showMobileChatRoom, setShowMobileChatRoom] = useState(false);
 
+  /* Loading & error state */
+  const [loadingChats, setLoadingChats] = useState<boolean>(true);
+  const [chatsError, setChatsError] = useState<string | null>(null);
+  const [loadingMessages, setLoadingMessages] = useState<boolean>(false);
+  const [messagesError, setMessagesError] = useState<string | null>(null);
+
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
   const audioRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingTimerRef = useRef<number | null>(null);
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  /* Cache user profiles to avoid redundant fetches */
+  const profileCache = useRef<Map<string, any>>(new Map());
 
   // --- Firestore listeners ---
   // Listen for conversations
@@ -79,7 +87,8 @@ export default function Messages() {
       return;
     }
 
-    const unsub = listenConversations(user.id, async (snapshot) => {
+    setLoadingChats(true);
+const unsub = listenConversations(user.id, async (snapshot) => {
       const conversationsPromises = snapshot.docs.map(async (docSnap) => {
         const data = docSnap.data();
         const participants = data.participants || [];
@@ -113,7 +122,15 @@ export default function Messages() {
       });
 
       const conversations = (await Promise.all(conversationsPromises)).filter(Boolean) as Chat[];
-      setChats(conversations);
+      // Merge with existing chats to preserve messages/unread counts
+      setChats(prev => {
+        const prevMap = new Map(prev.map(c => [c.id, c]));
+        return conversations.map(chat => {
+          const existing = prevMap.get(chat.id);
+          return existing ? { ...existing, ...chat } : chat;
+        });
+      });
+      setLoadingChats(false);
     });
 
     return () => unsub();
@@ -123,6 +140,7 @@ export default function Messages() {
   useEffect(() => {
     if (!activeChat?.id || !user) return;
 
+    setLoadingMessages(true);
     const unsub = listenMessages(activeChat.id, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -140,6 +158,8 @@ export default function Messages() {
       });
 
       const unreadCount = messages.filter(m => !m.seen && m.sender !== user.id).length;
+
+      setLoadingMessages(false);
 
       setChats(prevChats => prevChats.map(chat =>
         chat.id === activeChat.id ? { ...chat, messages, unreadCount } : chat
