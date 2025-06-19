@@ -621,3 +621,39 @@
   }
 }
 
+/* --- Mobile Sliding Override Start ---*/
+@media (max-width: 768px) {
+  /* Container holds both panels side-by-side */
+  .mainContent {
+    width: 200vw !important;          /* two screens wide */
+    transform: translateX(0) !important;
+    transition: transform 0.3s ease-in-out;
+  }
+
+  /* Slide to the chat room when class added */
+  .mainContent.showChatRoom {
+    transform: translateX(-100vw) !important; /* reveal second half */
+  }
+
+  /* Each panel takes half of the container width (one screen) */
+  .chatList,
+  .chatRoom {
+    width: 100vw !important;
+    flex-shrink: 0 !important;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Ensure chatRoom layering behaves */
+  .chatRoom {
+    position: relative !important;
+  }
+
+  /* Keep chatList visible (no display:none) so transform works */
+  .mainContent.showChatRoom .chatList {
+    display: flex !important;
+  }
+}
+/* --- Mobile Sliding Override End ---*/
+
