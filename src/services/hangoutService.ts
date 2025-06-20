@@ -122,6 +122,19 @@ export const hangoutService = {
     }
   },
 
+  // Fetch the current user's availability details
+  async getUserAvailability(userId: string): Promise<UserAvailability | null> {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const snap = await getDoc(userRef);
+      if (!snap.exists()) return null;
+      return (snap.data() as any).availability ?? null;
+    } catch (error) {
+      console.error('Error fetching user availability:', error);
+      return null;
+    }
+  },
+
   // Get current location
   getCurrentLocation(): Promise<Location> {
     return new Promise((resolve, reject) => {

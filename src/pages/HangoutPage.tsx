@@ -13,8 +13,28 @@ import { useAuth } from '../contexts/AuthContext';
 import { GoogleUser } from '../types/auth';
 import NotificationBell from '../components/notifications/NotificationBell';
 import { hangoutService } from '../services/hangoutService';
-import { Location } from '../types/hangout';
+import { Location, UserAvailability } from '../types/hangout';
 import styles from './HangoutPage.module.css';
+
+// Helper functions to keep availability persistent across page reloads
+const parseDurationToMs = (duration: string): number => {
+  const lower = duration.toLowerCase();
+  if (lower.includes('full day')) return 24 * 60 * 60 * 1000;
+  const match = lower.match(/(\d+)\s*hour/);
+  if (match) {
+    return parseInt(match[1], 10) * 60 * 60 * 1000;
+  }
+  // Treat unspecified duration as indefinite (until manually turned off)
+  return 0;
+};
+
+const isAvailabilityStillValid = (availability: UserAvailability): boolean => {
+  if (!availability.isAvailable) return false;
+  const ms = parseDurationToMs(availability.duration || '');
+  if (ms === 0) return true; // Indefinite availability
+  const expiresAt = availability.lastActiveAt.toDate().getTime() + ms;
+  return Date.now() < expiresAt;
+};
 
 interface User {
   id: string;
@@ -60,6 +80,29 @@ const HangoutPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [requestMessage, setRequestMessage] = useState('');
   const [showRequestSuccessPopup, setShowRequestSuccessPopup] = useState(false);
+
+  // Load persisted availability on mount
+  useEffect(() => {
+    const loadAvailability = async () => {
+      if (!user?.id) return;
+      try {
+        const availability = await hangoutService.getUserAvailability(user.id);
+        if (availability && isAvailabilityStillValid(availability)) {
+          setIsAvailable(true);
+          setAvailabilityReason(availability.reason);
+          setAvailabilityDuration(availability.duration || '1 hour');
+          if (availability.location) {
+            setUserLocation(availability.location);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading availability:', error);
+      }
+    };
+
+    loadAvailability();
+    // We only want this to run once on mount or when user changes
+  }, [user]);
 
   // Function to get user's location
   const getUserLocation = useCallback(async (): Promise<Location> => {
@@ -158,22 +201,7 @@ const HangoutPage: React.FC = () => {
     }
   }, [isAvailable, genderFilter, distanceFilter, userLocation, fetchNearbyUsers]);
 
-  // Clean up effect
-  useEffect(() => {
-    return () => {
-      if (isAvailable && user?.id && userLocation) {
-        hangoutService.updateAvailability(user.id, {
-          isAvailable: false,
-          reason: '',
-          duration: '',
-          location: {
-            lat: userLocation.lat,
-            lng: userLocation.lng
-          }
-        });
-      }
-    };
-  }, [isAvailable, user, userLocation]);
+  // Cleanup effect removed to preserve availability state across page reloads
 
   // Modify existing functions to use the new functionality
   const handleAvailabilitySubmit = async () => {
