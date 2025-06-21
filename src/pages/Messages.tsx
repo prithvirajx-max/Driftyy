@@ -81,6 +81,18 @@ export default function Messages() {
   const messageBubbleRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   /* Cache user profiles to avoid redundant fetches */
   const profileCache = useRef<Map<string, any>>(new Map());
+  /* Cache messages locally to prevent flickering */
+  const messageCache = useRef<Map<string, Message[]>>(new Map());
+
+  // Helper function to update message cache
+  const updateMessageCache = useCallback((chatId: string, messages: Message[]) => {
+    messageCache.current.set(chatId, [...messages]);
+  }, []);
+
+  // Helper function to get cached messages
+  const getCachedMessages = useCallback((chatId: string): Message[] => {
+    return messageCache.current.get(chatId) || [];
+  }, []);
 
   // --- Firestore listeners ---
   // Listen for conversations
@@ -160,13 +172,22 @@ const unsub = listenConversations(user.id, async (snapshot) => {
         } as Message;
       });
 
+      // Update cache first
+      updateMessageCache(activeChat.id, messages);
+
       const unreadCount = messages.filter(m => !m.seen && m.sender !== user.id).length;
 
       setLoadingMessages(false);
 
-      setChats(prevChats => prevChats.map(chat =>
-        chat.id === activeChat.id ? { ...chat, messages, unreadCount } : chat
-      ));
+      // Only update state if messages have actually changed
+      const currentMessages = getCachedMessages(activeChat.id);
+      if (JSON.stringify(currentMessages) !== JSON.stringify(messages)) {
+        setChats(prevChats => prevChats.map(chat =>
+          chat.id === activeChat.id
+            ? { ...chat, messages, unreadCount }
+            : chat
+        ));
+      }
     });
 
     return () => unsub();
@@ -215,6 +236,8 @@ const unsub = listenConversations(user.id, async (snapshot) => {
     const otherId = activeChat.participants.find((p: string) => p !== user.id) || '';
     if (!otherId) return;
 
+    // Optimistically update cache first
+    const currentMessages = getCachedMessages(activeChat.id);
     const tempId = `temp_${Date.now()}`;
     const newMessage: Message = {
       id: tempId,
@@ -226,6 +249,9 @@ const unsub = listenConversations(user.id, async (snapshot) => {
       replyTo: replyingTo?.id,
     };
     
+    // Update cache with new message
+    updateMessageCache(activeChat.id, [...currentMessages, newMessage]);
+    
     if (selectedMedia) {
       const isVideo = selectedMedia.type.startsWith('video/');
       const isAudio = selectedMedia.type.startsWith('audio/');
@@ -236,11 +262,11 @@ const unsub = listenConversations(user.id, async (snapshot) => {
       };
     }
 
-    // Optimistically update the UI
+    // Optimistically update state (will be based on cache)
     setChats(prevChats =>
       prevChats.map(chat =>
         chat.id === activeChat.id
-          ? { ...chat, messages: [...chat.messages, newMessage] }
+          ? { ...chat, messages: getCachedMessages(chat.id) }
           : chat
       )
     );
@@ -517,11 +543,11 @@ const unsub = listenConversations(user.id, async (snapshot) => {
 
             <div className={styles.messagesArea}>
               <AnimatePresence>
-                {activeChat.messages.length === 0 ? (
-                 <p className={styles.emptyMessage}>No whisper here yet. Your next connection is just a message away.</p>
-               ) : (
-                 activeChat.messages.map(renderMessage)
-               )}
+                {activeChat ? (
+                  getCachedMessages(activeChat.id).map(renderMessage)
+                ) : (
+                  <p className={styles.emptyMessage}>Start a conversation…</p>
+                )}
               </AnimatePresence>
               <div ref={messageEndRef} />
             </div>
