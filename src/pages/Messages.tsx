@@ -61,6 +61,9 @@ export default function Messages() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const [lightboxMedia, setLightboxMedia] = useState<Media | null>(null);
   const [showMobileChatRoom, setShowMobileChatRoom] = useState(false);
 
@@ -428,12 +431,14 @@ const unsub = listenConversations(user.id, async (snapshot) => {
           </div>
 
           <div className={styles.inboxList}>
-            <AnimatePresence>
-              {chats
-                .filter(chat => 
-                  chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-                .map(chat => (
+            {filteredChats.length === 0 ? (
+              <div className={styles.emptyInbox}>
+                <h2>No whisper here yet.</h2>
+                <p>Your next connection is just a message away.</p>
+              </div>
+            ) : (
+              <AnimatePresence>
+              {filteredChats.map(chat => (
                   <motion.div
                     key={chat.id}
                     className={`${styles.inboxCard} ${activeChat?.id === chat.id ? styles.active : ''}`}
@@ -467,6 +472,7 @@ const unsub = listenConversations(user.id, async (snapshot) => {
                   </motion.div>
                 ))}
             </AnimatePresence>
+            )}
           </div>
         </div>
 
@@ -512,7 +518,7 @@ const unsub = listenConversations(user.id, async (snapshot) => {
             <div className={styles.messagesArea}>
               <AnimatePresence>
                 {activeChat.messages.length === 0 ? (
-                 <p className={styles.emptyMessage}>Start a conversation…</p>
+                 <p className={styles.emptyMessage}>No whisper here yet. Your next connection is just a message away.</p>
                ) : (
                  activeChat.messages.map(renderMessage)
                )}
@@ -606,6 +612,13 @@ const unsub = listenConversations(user.id, async (snapshot) => {
             </div>
           </div>
         )}
+      {/* Empty state when no chat selected */}
+      {!activeChat && (
+        <div className={styles.emptyState}>
+          <h2>No whisper here yet.</h2>
+          <p>Your next connection is just a message away.</p>
+        </div>
+      )}
       </div>
 
       {/* Lightbox for media */}
